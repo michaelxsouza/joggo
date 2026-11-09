@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+    overflow-x: hidden;
+  }
+  ::selection {
+    background: rgba(176, 255, 53, 0.3);
+  }
+  :focus-visible {
+    outline: 2px solid #b0ff35;
+    outline-offset: 2px;
+    border-radius: 10px;
+  }
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+  input[type='date']::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-card border border-line rounded-2xl;
+  }
+  .field {
+    @apply w-full rounded-xl bg-surface border border-line px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-faint
+      transition-colors focus:border-lime/70 focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-lime/20;
+  }
+  .field-error {
+    @apply border-danger/70 focus:border-danger focus:ring-danger/20;
+  }
+  .label {
+    @apply block text-sm font-semibold text-ink mb-1.5;
+  }
+  .hint {
+    @apply text-xs text-ink-muted mt-1.5;
+  }
+  .error-text {
+    @apply text-xs text-danger mt-1.5 font-medium;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #2c322d;
+  border-radius: 999px;
+  border: 2px solid #101211;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
