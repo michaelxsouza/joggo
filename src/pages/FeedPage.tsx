@@ -75,7 +75,7 @@ export default function FeedPage() {
         ) : (
           <PostList posts={posts} adCategories={adCategories} adContext="feed" />
         )}
-        {posts.length > 0 && <p className="text-center text-xs text-ink-faint py-6">Você chegou ao fim · publicações e perfis são demonstrativos</p>}
+        {posts.length > 0 && <p className="text-center text-xs text-ink-faint py-6">Você chegou ao fim</p>}
       </div>
     </div>
   );

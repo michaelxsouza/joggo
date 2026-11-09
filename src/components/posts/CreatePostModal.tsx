@@ -161,7 +161,7 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity }
         </p>
       )}
       <p className="text-[11px] text-ink-faint mt-4">
-        Lembre-se: sem promessas de lucro, pedidos de dinheiro ou divulgação de links de apostas. Publicações ficam salvas apenas neste navegador (demonstração).
+        Lembre-se: sem promessas de lucro, pedidos de dinheiro ou divulgação de links de apostas.
       </p>
     </Modal>
   );

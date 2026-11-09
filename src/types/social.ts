@@ -17,8 +17,9 @@ export interface User {
   coverColor: string;
   interests: Category[];
   joinedAt: string; // ISO
-  followers: number; // base de demonstração
+  followers: number; // seguidores (sem contar eu)
   following: number;
+  founder?: boolean;
 }
 
 export interface Post {
@@ -29,8 +30,15 @@ export interface Post {
   text: string;
   image?: string;
   createdAt: string;
-  baseLikes: number; // curtidas de demonstração de outros usuários
+  baseLikes: number; // curtidas de outros usuários (sem contar a minha)
+  kind?: 'post' | 'bilhete';
+  betEvent?: string;
+  betPick?: string;
+  betOdd?: number;
+  betResult?: BetResult;
 }
+
+export type BetResult = 'pendente' | 'green' | 'red' | 'anulado';
 
 export interface Comment {
   id: ID;

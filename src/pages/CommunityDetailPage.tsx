@@ -148,7 +148,6 @@ export default function CommunityDetailPage() {
                   {u.id !== state.currentUserId ? <FollowButton user={u} /> : <span className="text-sm text-ink-muted">Você</span>}
                 </li>
               ))}
-              <li className="p-3.5 text-xs text-ink-faint">Mostrando membros de demonstração. A lista completa dependerá do backend.</li>
             </ul>
           ))}
         {tab !== 'posts' && (

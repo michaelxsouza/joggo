@@ -1,6 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { ToastProvider } from '@/components/ui/Toast';
+import { ToastProvider, useToast } from '@/components/ui/Toast';
+import { Button } from '@/components/ui/Button';
+import { clearSocial, loadSocial, onSocialError, socialStatus } from '@/services/socialService';
 import { UIProvider } from '@/app/UIContext';
 import { AppShell } from '@/components/layout/AppShell';
 import { reconcileCampaigns } from '@/services/adsService';
@@ -14,10 +16,6 @@ import NotificationsPage from '@/pages/NotificationsPage';
 import SettingsPage from '@/pages/SettingsPage';
 import RulesPage from '@/pages/RulesPage';
 import PostDetailPage from '@/pages/PostDetailPage';
-import AdvertiserPage from '@/pages/ads/AdvertiserPage';
-import CampaignEditorPage from '@/pages/ads/CampaignEditorPage';
-import CampaignReportPage from '@/pages/ads/CampaignReportPage';
-import AdminPage from '@/pages/ads/AdminPage';
 import NotFound from '@/pages/NotFound';
 import LoginPage from '@/pages/auth/LoginPage';
 import SignUpPage from '@/pages/auth/SignUpPage';
@@ -29,6 +27,28 @@ function Splash() {
   return <div className="min-h-dvh grid place-items-center text-ink-faint text-sm" aria-busy="true">Carregando…</div>;
 }
 
+/** Carrega os dados do usuário logado e mostra erros de gravação como aviso. */
+function SocialGate({ userId, children }: { userId: string; children: React.ReactNode }) {
+  const toast = useToast();
+  const status = useSyncExternalStore(socialStatus.subscribe, socialStatus.get);
+  useEffect(() => {
+    void loadSocial();
+    return () => clearSocial();
+  }, [userId]);
+  useEffect(() => onSocialError((m) => toast.error(m)), [toast]);
+  if (status.status === 'error')
+    return (
+      <div className="min-h-dvh grid place-items-center p-6 text-center">
+        <div className="max-w-sm space-y-4">
+          <p className="text-ink-muted">{status.error}</p>
+          <Button onClick={() => void loadSocial()}>Tentar de novo</Button>
+        </div>
+      </div>
+    );
+  if (status.status !== 'ready') return <Splash />;
+  return <>{children}</>;
+}
+
 /** Protege as rotas do app: sem sessão, vai para /entrar e volta depois. */
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { ready, session, recovery } = useAuth();
@@ -36,7 +56,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   if (!ready) return <Splash />;
   if (recovery && session) return <NewPasswordPage />;
   if (!session) return <Navigate to="/entrar" replace state={{ from: location.pathname + location.search }} />;
-  return <>{children}</>;
+  return <SocialGate userId={session.userId}>{children}</SocialGate>;
 }
 
 function GuestOnly({ children }: { children: React.ReactNode }) {
@@ -72,11 +92,6 @@ export default function App() {
               <Route path="configuracoes" element={<SettingsPage />} />
               <Route path="regras" element={<RulesPage />} />
               <Route path="post/:id" element={<PostDetailPage />} />
-              <Route path="anunciar" element={<AdvertiserPage />} />
-              <Route path="anunciar/nova" element={<CampaignEditorPage />} />
-              <Route path="anunciar/:id/editar" element={<CampaignEditorPage />} />
-              <Route path="anunciar/:id" element={<CampaignReportPage />} />
-              <Route path="admin" element={<AdminPage />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

@@ -25,3 +25,6 @@ grant execute on function public.start_conversation(uuid) to authenticated;
 
 revoke execute on function public.handle_available(text) from public;
 grant execute on function public.handle_available(text) to anon, authenticated;
+
+-- 2026-11-09: cor de capa do perfil
+alter table public.profiles add column cover_color text not null default '#1B2A10';

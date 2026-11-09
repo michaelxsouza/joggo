@@ -33,7 +33,7 @@ export default function TermsPage() {
           <h2 id="privacidade" className="text-2xl font-extrabold text-ink tracking-tight pt-6 scroll-mt-6">Política de Privacidade</h2>
           <p>Coletamos os dados necessários para a conta (nome, usuário, e-mail e data de nascimento), o conteúdo que você publica e dados de uso para segurança e funcionamento do serviço.</p>
           <p>Anúncios são exibidos com base em categorias de interesse e no tema do conteúdo. Não usamos histórico de perdas, depósitos, frequência de jogo ou sinais de vulnerabilidade para segmentação.</p>
-          <p>Você pode solicitar acesso, correção ou exclusão dos seus dados, conforme a LGPD. Nesta versão de demonstração, os dados ficam apenas no seu navegador e podem ser apagados em Configurações › Restaurar dados.</p>
+          <p>Você pode solicitar acesso, correção ou exclusão dos seus dados, conforme a LGPD. Para isso, fale com a equipe da Joggo.</p>
         </article>
       </div>
     </div>

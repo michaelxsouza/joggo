@@ -1,17 +1,14 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Ban, ChevronRight, LogOut, Flag, HeartHandshake, Megaphone, Pencil, RotateCcw, ScrollText, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Ban, ChevronRight, LogOut, Flag, HeartHandshake, Pencil, ScrollText, ShieldAlert } from 'lucide-react';
 import { sel, social, useSocial } from '@/services/socialService';
-import { ads } from '@/services/adsService';
 import { Avatar, SectionCard, Toggle } from '@/components/ui/misc';
 import { Button } from '@/components/ui/Button';
 import { EditProfileModal } from '@/components/profile/EditProfileModal';
 import { PageHeader } from '@/components/layout/AppShell';
 import { useToast } from '@/components/ui/Toast';
-import { useUI } from '@/app/UIContext';
 import { timeAgo } from '@/lib/utils';
 import { useDocumentTitle } from '@/lib/hooks';
-import { safeRemove } from '@/lib/store';
 import { auth } from '@/services/authService';
 
 export default function SettingsPage() {
@@ -21,8 +18,6 @@ export default function SettingsPage() {
   const prefs = state.notificationPrefs;
   const [editing, setEditing] = useState(false);
   const toast = useToast();
-  const ui = useUI();
-  const navigate = useNavigate();
 
   const setPref = (k: keyof typeof prefs, label: string) => (v: boolean) => {
     social.setNotificationPrefs({ [k]: v });
@@ -52,15 +47,12 @@ export default function SettingsPage() {
             className="mt-4"
             icon={<LogOut className="h-4 w-4" />}
             onClick={() => {
-              auth.signOut();
+              void auth.signOut();
               toast.success('Você saiu da sua conta.');
             }}
           >
             Sair da conta
           </Button>
-          <p className="text-xs text-ink-faint mt-3">
-            Esta é uma sessão de demonstração, sem autenticação real. Nenhuma senha ou dado sensível é armazenado no navegador.
-          </p>
         </SectionCard>
 
         <SectionCard title="Notificações">
@@ -129,42 +121,10 @@ export default function SettingsPage() {
               ))}
             </ul>
           )}
-          <p className="text-xs text-ink-faint mt-3">Demonstração: denúncias ficam registradas localmente até a integração com a moderação.</p>
+          <p className="text-xs text-ink-faint mt-3">A equipe da Joggo analisa todas as denúncias.</p>
         </SectionCard>
 
-        <SectionCard title="Publicidade e administração">
-          <ul className="-mx-2">
-            <RowLink to="/anunciar" icon={<Megaphone className="h-5 w-5" />} label="Anunciar na Joggo" />
-            <RowLink to="/admin" icon={<ShieldCheck className="h-5 w-5" />} label="Painel administrativo (demonstração)" />
-          </ul>
-        </SectionCard>
 
-        <SectionCard title="Dados de demonstração">
-          <p className="text-sm text-ink-muted">Restaura publicações, perfis, mensagens, comunidades e campanhas para o estado inicial.</p>
-          <Button
-            variant="danger"
-            size="sm"
-            className="mt-3"
-            icon={<RotateCcw className="h-4 w-4" />}
-            onClick={() =>
-              ui.confirm({
-                title: 'Restaurar dados de demonstração?',
-                message: 'Tudo o que você criou neste navegador será apagado.',
-                confirmLabel: 'Restaurar',
-                danger: true,
-                onConfirm: () => {
-                  social.resetDemo();
-                  ads.resetDemo();
-                  safeRemove('joggo:age-ok');
-                  toast.success('Dados restaurados.');
-                  navigate('/');
-                },
-              })
-            }
-          >
-            Restaurar dados
-          </Button>
-        </SectionCard>
       </div>
       <EditProfileModal open={editing} onClose={() => setEditing(false)} />
     </div>

@@ -7,6 +7,9 @@ import type { AdsState, Campaign, Placement, PricingRule, ReviewChecklist, AdSlo
 import type { Category, ID } from '@/types/social';
 import type { AdDelivery, AdMeasurement, AdReviewQueue, PaymentGateway } from './contracts';
 
+/** Anúncios desligados no beta: nenhum anúncio é exibido. */
+export const ADS_ENABLED = false;
+
 export const adsStore = createPersistentStore<AdsState>('joggo:ads', seedAds);
 export const useAds = <S,>(selector: (s: AdsState) => S) => useStore(adsStore, selector);
 const set = adsStore.set;
@@ -50,6 +53,7 @@ export const delivery: AdDelivery & {
   pick(s: AdsState, placement: Placement, categories: Category[], seed: number): Campaign | undefined;
 } = {
   eligible(placement, opts) {
+    if (!ADS_ENABLED) return [];
     const s = adsStore.get();
     const slot = s.slots.find((x) => x.placement === placement);
     if (!slot?.enabled) return [];

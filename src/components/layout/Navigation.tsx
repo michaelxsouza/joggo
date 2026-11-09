@@ -1,5 +1,5 @@
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import { Bell, Compass, Home, LogOut, Mail, Megaphone, Plus, Settings, ShieldCheck, User, Users } from 'lucide-react';
+import { Bell, Compass, Home, LogOut, Mail, Plus, Settings, User, Users } from 'lucide-react';
 import { auth } from '@/services/authService';
 import { IconButton } from '@/components/ui/Button';
 import { sel, useSocial } from '@/services/socialService';
@@ -34,8 +34,6 @@ export function ResponsibleNote({ className }: { className?: string }) {
       <Link to="/regras" className="hover:text-ink underline-offset-2 hover:underline">
         Regras
       </Link>
-      {' · '}
-      <span>Dados demonstrativos</span>
     </p>
   );
 }
@@ -52,10 +50,6 @@ export function Sidebar() {
     { to: '/notificacoes', label: 'Notificações', icon: Bell, count: notif },
     { to: `/perfil/${me.handle}`, label: 'Meu perfil', icon: User },
     { to: '/configuracoes', label: 'Configurações', icon: Settings },
-  ];
-  const secondary = [
-    { to: '/anunciar', label: 'Anunciar na Joggo', icon: Megaphone },
-    { to: '/admin', label: 'Administração', icon: ShieldCheck },
   ];
   return (
     <nav aria-label="Navegação principal" className="hidden lg:flex flex-col h-dvh sticky top-0 py-5 pr-4 w-[248px] shrink-0">
@@ -85,21 +79,6 @@ export function Sidebar() {
       <Button size="lg" className="mt-5" icon={<Plus className="h-5 w-5" />} onClick={() => ui.openComposer()}>
         Criar publicação
       </Button>
-      <ul className="mt-5 pt-4 border-t border-line space-y-1">
-        {secondary.map(({ to, label, icon: Icon }) => (
-          <li key={to}>
-            <NavLink
-              to={to}
-              className={({ isActive }) =>
-                cn('flex items-center gap-3 h-10 px-3 rounded-xl text-sm font-semibold transition-colors', isActive ? 'bg-lime/10 text-lime' : 'text-ink-muted hover:text-ink hover:bg-surface')
-              }
-            >
-              <Icon className="h-[18px] w-[18px]" aria-hidden />
-              {label}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
       <div className="mt-auto">
         <div className="flex items-center gap-1">
           <Link to={`/perfil/${me.handle}`} className="flex items-center gap-3 rounded-2xl p-2.5 hover:bg-surface transition-colors flex-1 min-w-0">
@@ -109,11 +88,10 @@ export function Sidebar() {
               <p className="text-sm text-ink-muted truncate">@{me.handle}</p>
             </div>
           </Link>
-          <IconButton label="Sair da conta" size="sm" onClick={() => auth.signOut()}>
+          <IconButton label="Sair da conta" size="sm" onClick={() => void auth.signOut()}>
             <LogOut className="h-[18px] w-[18px]" />
           </IconButton>
         </div>
-        <p className="px-2.5 mt-1 text-[11px] text-ink-faint">Sessão de demonstração · sem autenticação real</p>
         <ResponsibleNote className="px-2.5 mt-3" />
       </div>
     </nav>

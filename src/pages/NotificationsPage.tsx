@@ -111,7 +111,6 @@ export default function NotificationsPage() {
           })}
         </ul>
       )}
-      <p className="text-center text-xs text-ink-faint py-4">Notificações de exemplo para demonstração.</p>
     </div>
   );
 }

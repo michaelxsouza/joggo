@@ -64,7 +64,6 @@ export default function CommunitiesPage() {
           ))}
         </div>
       )}
-      <p className="text-center text-xs text-ink-faint py-6">Comunidades e números de membros são demonstrativos.</p>
     </div>
   );
 }

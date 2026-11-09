@@ -137,7 +137,6 @@ export default function ProfilePage() {
             <strong>{compact(sel.followingCount(state, user))}</strong> <span className="text-ink-muted">seguindo</span>
           </span>
         </div>
-        <p className="text-[11px] text-ink-faint mt-1">Números demonstrativos.</p>
       </div>
 
       {blocked ? (
