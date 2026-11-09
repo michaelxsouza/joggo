@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useUI } from '@/app/UIContext';
 import { cn, compact, copyText, timeAgo } from '@/lib/utils';
 import { CommentsSection } from './CommentsSection';
-import { ImageCarousel, VideoEmbedView } from './PostMedia';
+import { ImageCarousel } from './PostMedia';
 import { BetCard } from './BetCard';
 
 export const postLink = (id: string) => `${window.location.origin}${window.location.pathname}#/post/${id}`;
@@ -132,7 +132,6 @@ function PostCardInner({ post, defaultOpenComments = false }: { post: Post; defa
       {post.text && <p className="mt-3 text-[15px] leading-relaxed whitespace-pre-wrap break-words">{post.text}</p>}
       {post.kind === 'bilhete' && <BetCard post={post} isMine={isMine} />}
       {post.images.length > 0 && <ImageCarousel images={post.images} alt={`Imagem da publicação de ${author.name}`} />}
-      {post.video && <VideoEmbedView url={post.video} />}
 
       <footer className="mt-3 -mx-2 flex items-center justify-between">
         <div className="flex items-center">

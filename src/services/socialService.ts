@@ -159,7 +159,6 @@ const toPost = (r: any, likedByMe: boolean): Post => ({
   category: r.category,
   text: r.text ?? '',
   images: r.images?.length ? r.images : r.image_url ? [r.image_url] : [],
-  video: r.video_url ?? undefined,
   createdAt: r.created_at,
   baseLikes: Math.max(0, (r.like_count ?? 0) - (likedByMe ? 1 : 0)),
   kind: r.kind,
@@ -389,14 +388,13 @@ export const social = {
   createPost(input: {
     text: string;
     images?: string[];
-    video?: string;
     category: Category;
     communityId?: ID;
     bet?: { event?: string; pick: string; odd: number };
   }) {
     const text = input.text.trim();
     const images = (input.images ?? []).slice(0, 4);
-    if (!text && !images.length && !input.video && !input.bet) throw new Error('Escreva algo, adicione uma imagem ou um vídeo.');
+    if (!text && !images.length && !input.bet) throw new Error('Escreva algo ou adicione uma imagem.');
     if (text.length > 2000) throw new Error('A publicação pode ter até 2000 caracteres.');
     if (input.bet) {
       if (!input.bet.pick.trim()) throw new Error('Informe o palpite do bilhete.');
@@ -408,7 +406,6 @@ export const social = {
       authorId: me(),
       text,
       images,
-      video: input.video,
       category: input.category,
       communityId: input.communityId,
       createdAt: nowIso(),
@@ -433,7 +430,6 @@ export const social = {
           text,
           image_url: urls[0] ?? null,
           images: urls,
-          video_url: input.video ?? null,
           bet_event: post.betEvent ?? null,
           bet_pick: post.betPick ?? null,
           bet_odd: post.betOdd ?? null,

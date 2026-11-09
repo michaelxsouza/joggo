@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { ImagePlus, Link2, MessageSquareText, Ticket, X } from 'lucide-react';
+import { ImagePlus, MessageSquareText, Ticket, X } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Avatar, Chip } from '@/components/ui/misc';
 import { SelectField } from '@/components/ui/Field';
-import { parseVideoUrl } from '@/lib/video';
 import { useToast } from '@/components/ui/Toast';
 import { sel, social, useSocial } from '@/services/socialService';
 import { CATEGORIES, type Category, type ID } from '@/types/social';
@@ -23,8 +22,6 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity }
   const [text, setText] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [mode, setMode] = useState<Mode>('post');
-  const [videoOpen, setVideoOpen] = useState(false);
-  const [video, setVideo] = useState('');
   const [betEvent, setBetEvent] = useState('');
   const [betPick, setBetPick] = useState('');
   const [betOdd, setBetOdd] = useState('');
@@ -40,8 +37,6 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity }
       setText('');
       setImages([]);
       setMode('post');
-      setVideo('');
-      setVideoOpen(false);
       setBetEvent('');
       setBetPick('');
       setBetOdd('');
@@ -80,8 +75,6 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity }
 
   const submit = () => {
     if (!category) return setError('Escolha uma categoria para a publicação.');
-    const v = video.trim();
-    if (v && !parseVideoUrl(v)) return setError('Link de vídeo não reconhecido. Use um link do YouTube, Instagram, TikTok ou Kick.');
     let bet: { event?: string; pick: string; odd: number } | undefined;
     if (mode === 'bilhete') {
       if (!betPick.trim()) return setError('Informe o palpite do bilhete.');
@@ -90,7 +83,7 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity }
       bet = { event: betEvent, pick: betPick, odd };
     }
     try {
-      social.createPost({ text, images, video: v ? parseVideoUrl(v)!.url : undefined, category, communityId: communityId || undefined, bet });
+      social.createPost({ text, images, category, communityId: communityId || undefined, bet });
       toast.success(mode === 'bilhete' ? 'Bilhete publicado! Boa sorte 🍀' : 'Publicação criada!');
       onClose();
     } catch (e) {
@@ -112,7 +105,7 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity }
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={submit} disabled={(mode === 'post' && !text.trim() && !images.length && !video.trim()) || tooLong || loadingImg}>
+          <Button onClick={submit} disabled={(mode === 'post' && !text.trim() && !images.length) || tooLong || loadingImg}>
             Publicar
           </Button>
         </>
@@ -206,24 +199,6 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity }
         </div>
       )}
 
-      {videoOpen && (
-        <label className="block mt-3 animate-fade-in">
-          <span className="label block">Link do vídeo</span>
-          <input
-            className="field"
-            type="url"
-            inputMode="url"
-            value={video}
-            onChange={(e) => { setVideo(e.target.value); setError(undefined); }}
-            placeholder="Cole um link do YouTube, Instagram, TikTok ou Kick"
-          />
-          {video.trim() && (
-            <span className={cn('block text-xs mt-1', parseVideoUrl(video) ? 'text-lime' : 'text-danger')}>
-              {parseVideoUrl(video) ? `Vídeo do ${parseVideoUrl(video)!.label} reconhecido.` : 'Link não reconhecido.'}
-            </span>
-          )}
-        </label>
-      )}
 
       <fieldset className="mt-4">
         <legend className="label">Categoria</legend>
@@ -250,17 +225,7 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity }
         <Button variant="secondary" size="sm" icon={<ImagePlus className="h-4 w-4" />} loading={loadingImg} disabled={images.length >= MAX_IMAGES} onClick={() => fileRef.current?.click()}>
           {images.length ? `Imagens (${images.length}/${MAX_IMAGES})` : 'Imagens'}
         </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          icon={<Link2 className="h-4 w-4" />}
-          onClick={() => {
-            if (videoOpen) setVideo('');
-            setVideoOpen((v) => !v);
-          }}
-        >
-          {videoOpen ? 'Remover vídeo' : 'Vídeo'}
-        </Button>
+        <span className="text-xs text-ink-faint">Até 4 imagens · JPG, PNG ou WEBP</span>
       </div>
 
       {error && (

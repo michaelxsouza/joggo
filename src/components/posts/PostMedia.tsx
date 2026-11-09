@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, PlayCircle } from 'lucide-react';
-import { parseVideoUrl } from '@/lib/video';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /** Proporção como no Instagram: entre paisagem 1.91:1 e retrato 4:5, sem cortar a imagem além disso. */
@@ -65,49 +64,6 @@ export function ImageCarousel({ images, alt }: { images: string[]; alt: string }
           </div>
         </>
       )}
-    </div>
-  );
-}
-
-/** Player embutido do YouTube/Instagram/TikTok/Kick. Só carrega o player quando a pessoa toca. */
-export function VideoEmbedView({ url }: { url: string }) {
-  const v = parseVideoUrl(url);
-  const [playing, setPlaying] = useState(false);
-  if (!v) return null;
-
-  if (!v.embedUrl)
-    return (
-      <a href={v.url} target="_blank" rel="noopener noreferrer nofollow" className="mt-3 flex items-center gap-3 rounded-2xl border border-line bg-surface p-4 hover:border-lime/50">
-        <PlayCircle className="h-8 w-8 text-lime shrink-0" aria-hidden />
-        <span className="flex-1 min-w-0">
-          <span className="block font-semibold">Vídeo no {v.label}</span>
-          <span className="block text-sm text-ink-muted truncate">{v.url}</span>
-        </span>
-        <ExternalLink className="h-4 w-4 text-ink-muted" aria-hidden />
-      </a>
-    );
-
-  return (
-    <div className={cn('mt-3 rounded-2xl overflow-hidden border border-line bg-black', v.vertical && 'max-w-[360px]')}>
-      <div className="relative w-full" style={{ aspectRatio: v.vertical ? (v.provider === 'instagram' ? '4 / 5.6' : '9 / 16') : '16 / 9' }}>
-        {playing ? (
-          <iframe
-            src={v.embedUrl + (v.provider === 'youtube' ? '?autoplay=1&rel=0' : '')}
-            title={`Vídeo do ${v.label}`}
-            className="absolute inset-0 h-full w-full"
-            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-            allowFullScreen
-            sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
-            referrerPolicy="strict-origin-when-cross-origin"
-            loading="lazy"
-          />
-        ) : (
-          <button type="button" onClick={() => setPlaying(true)} className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-ink-muted hover:text-ink" aria-label={`Reproduzir vídeo do ${v.label}`}>
-            <PlayCircle className="h-14 w-14 text-lime" aria-hidden />
-            <span className="text-sm font-semibold">Assistir vídeo do {v.label}</span>
-          </button>
-        )}
-      </div>
     </div>
   );
 }
