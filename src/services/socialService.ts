@@ -44,6 +44,7 @@ const emptyState = (): SocialState => ({
   savedPostIds: [],
   hiddenPostIds: [],
   followingIds: [],
+  follows: [],
   joinedCommunityIds: [],
   blockedUserIds: [],
   reports: [],
@@ -278,6 +279,7 @@ export function loadSocial(silent = false): Promise<void> {
         savedPostIds: (saves as any[]).map((s) => s.post_id),
         hiddenPostIds: (hidden as any[]).map((s) => s.post_id),
         followingIds,
+        follows: followRows.filter((f) => f.follower_id !== uidMe).map((f) => ({ followerId: f.follower_id, followingId: f.following_id })),
         joinedCommunityIds: memberRows.filter((m) => m.user_id === uidMe).map((m) => m.community_id),
         blockedUserIds: (blocks as any[]).map((b) => b.blocked_id),
         reports: (reports as any[]).map((r) => ({ id: r.id, target: r.target, targetId: r.target_id, reason: r.reason, details: r.details ?? undefined, createdAt: r.created_at })),
@@ -354,8 +356,19 @@ export const sel = {
   likeCount: (s: SocialState, p: Post) => p.baseLikes + (s.likedPostIds.includes(p.id) ? 1 : 0),
   commentsOf: (s: SocialState, postId: ID) => s.comments.filter((c) => c.postId === postId && !s.blockedUserIds.includes(c.authorId)),
   memberCount: (s: SocialState, c: Community) => c.baseMembers + (s.joinedCommunityIds.includes(c.id) ? 1 : 0),
-  followerCount: (s: SocialState, u: User) => u.followers + (s.followingIds.includes(u.id) ? 1 : 0),
-  followingCount: (s: SocialState, u: User) => (u.id === s.currentUserId ? s.followingIds.length : u.following),
+  /** Pessoas que seguem `uid` (sem bloqueados). */
+  followersOf: (s: SocialState, uid: ID): User[] => {
+    const ids = s.follows.filter((f) => f.followingId === uid).map((f) => f.followerId);
+    if (s.followingIds.includes(uid)) ids.unshift(s.currentUserId);
+    return ids.filter((id) => !s.blockedUserIds.includes(id)).map((id) => s.users.find((u) => u.id === id)).filter((u): u is User => !!u);
+  },
+  /** Pessoas que `uid` segue (sem bloqueados). */
+  followingOf: (s: SocialState, uid: ID): User[] => {
+    const ids = uid === s.currentUserId ? s.followingIds : s.follows.filter((f) => f.followerId === uid).map((f) => f.followingId);
+    return ids.filter((id) => !s.blockedUserIds.includes(id)).map((id) => s.users.find((u) => u.id === id)).filter((u): u is User => !!u);
+  },
+  followerCount: (s: SocialState, u: User) => sel.followersOf(s, u.id).length,
+  followingCount: (s: SocialState, u: User) => sel.followingOf(s, u.id).length,
   visiblePosts: (s: SocialState) =>
     s.posts
       .filter((p) => !s.hiddenPostIds.includes(p.id) && !s.blockedUserIds.includes(p.authorId))

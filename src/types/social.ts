@@ -121,6 +121,8 @@ export interface SocialState {
   savedPostIds: ID[];
   hiddenPostIds: ID[];
   followingIds: ID[];
+  /** Quem segue quem entre as outras pessoas (as minhas relações ficam em followingIds). */
+  follows: { followerId: ID; followingId: ID }[];
   joinedCommunityIds: ID[];
   blockedUserIds: ID[];
   reports: Report[];

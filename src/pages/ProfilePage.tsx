@@ -8,6 +8,7 @@ import { Button, IconButton } from '@/components/ui/Button';
 import { FollowButton } from '@/components/social/Buttons';
 import { PostList } from '@/components/posts/PostList';
 import { EditProfileModal } from '@/components/profile/EditProfileModal';
+import { FollowListModal, type FollowTab } from '@/components/profile/FollowListModal';
 import { useUI } from '@/app/UIContext';
 import { useToast } from '@/components/ui/Toast';
 import { compact, copyText } from '@/lib/utils';
@@ -21,6 +22,7 @@ export default function ProfilePage() {
   useDocumentTitle(user ? `${user.name} (@${user.handle})` : 'Perfil');
   const [tab, setTab] = useState<'posts' | 'salvos'>('posts');
   const [editing, setEditing] = useState(false);
+  const [followList, setFollowList] = useState<FollowTab | null>(null);
   const navigate = useNavigate();
   const ui = useUI();
   const toast = useToast();
@@ -109,7 +111,14 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <h1 className="text-2xl font-extrabold tracking-tight mt-3">{user.name}</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight mt-3 flex items-center gap-2 flex-wrap">
+          {user.name}
+          {user.founder && (
+            <span className="rounded-full bg-lime/15 text-lime border border-lime/30 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide" title="Membro fundador da Joggo">
+              Fundador
+            </span>
+          )}
+        </h1>
         <p className="text-ink-muted">@{user.handle}</p>
         {user.bio && <p className="mt-3 text-[15px] leading-relaxed whitespace-pre-wrap">{user.bio}</p>}
         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-sm text-ink-muted">
@@ -130,12 +139,16 @@ export default function ProfilePage() {
           ))}
         </div>
         <div className="flex gap-5 mt-4 text-[15px]">
-          <span>
-            <strong>{compact(sel.followerCount(state, user))}</strong> <span className="text-ink-muted">seguidores</span>
-          </span>
-          <span>
+          <button type="button" onClick={() => setFollowList('seguidores')} className="hover:underline underline-offset-2">
+            <strong>{compact(sel.followerCount(state, user))}</strong>{' '}
+            <span className="text-ink-muted">{sel.followerCount(state, user) === 1 ? 'seguidor' : 'seguidores'}</span>
+          </button>
+          <button type="button" onClick={() => setFollowList('seguindo')} className="hover:underline underline-offset-2">
             <strong>{compact(sel.followingCount(state, user))}</strong> <span className="text-ink-muted">seguindo</span>
-          </span>
+          </button>
+          {!isMe && sel.followingOf(state, user.id).some((u) => u.id === state.currentUserId) && (
+            <span className="self-center rounded-md bg-surface border border-line px-2 py-0.5 text-xs text-ink-muted">Segue você</span>
+          )}
         </div>
       </div>
 
@@ -195,6 +208,7 @@ export default function ProfilePage() {
           </div>
         </>
       )}
+      {followList && <FollowListModal key={user.id + followList} user={user} open initialTab={followList} onClose={() => setFollowList(null)} />}
       {isMe && <EditProfileModal open={editing} onClose={() => setEditing(false)} onSaved={(h) => h !== handle && navigate(`/perfil/${h}`, { replace: true })} />}
     </div>
   );
