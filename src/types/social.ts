@@ -28,7 +28,8 @@ export interface Post {
   communityId?: ID;
   category: Category;
   text: string;
-  image?: string;
+  images: string[]; // até 4
+  video?: string; // link do YouTube/Instagram/TikTok/Kick
   createdAt: string;
   baseLikes: number; // curtidas de outros usuários (sem contar a minha)
   kind?: 'post' | 'bilhete';

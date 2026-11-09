@@ -158,7 +158,8 @@ const toPost = (r: any, likedByMe: boolean): Post => ({
   communityId: r.community_id ?? undefined,
   category: r.category,
   text: r.text ?? '',
-  image: r.image_url ?? undefined,
+  images: r.images?.length ? r.images : r.image_url ? [r.image_url] : [],
+  video: r.video_url ?? undefined,
   createdAt: r.created_at,
   baseLikes: Math.max(0, (r.like_count ?? 0) - (likedByMe ? 1 : 0)),
   kind: r.kind,
@@ -387,13 +388,15 @@ export function feedPosts(s: SocialState, tab: FeedTab, category: Category | 'to
 export const social = {
   createPost(input: {
     text: string;
-    image?: string;
+    images?: string[];
+    video?: string;
     category: Category;
     communityId?: ID;
     bet?: { event?: string; pick: string; odd: number };
   }) {
     const text = input.text.trim();
-    if (!text && !input.image) throw new Error('Escreva algo ou adicione uma imagem.');
+    const images = (input.images ?? []).slice(0, 4);
+    if (!text && !images.length && !input.video && !input.bet) throw new Error('Escreva algo, adicione uma imagem ou um vídeo.');
     if (text.length > 2000) throw new Error('A publicação pode ter até 2000 caracteres.');
     if (input.bet) {
       if (!input.bet.pick.trim()) throw new Error('Informe o palpite do bilhete.');
@@ -404,7 +407,8 @@ export const social = {
       id,
       authorId: me(),
       text,
-      image: input.image,
+      images,
+      video: input.video,
       category: input.category,
       communityId: input.communityId,
       createdAt: nowIso(),
@@ -418,11 +422,8 @@ export const social = {
     set((s) => ({ ...s, posts: [post, ...s.posts] }));
     void (async () => {
       try {
-        let imageUrl: string | null = null;
-        if (input.image) {
-          imageUrl = isDataUrl(input.image) ? await uploadDataUrl(input.image, 'posts') : input.image;
-          set((s) => ({ ...s, posts: s.posts.map((p) => (p.id === id ? { ...p, image: imageUrl ?? undefined } : p)) }));
-        }
+        const urls = await Promise.all(images.map((img) => (isDataUrl(img) ? uploadDataUrl(img, 'posts') : Promise.resolve(img))));
+        if (urls.length) set((s) => ({ ...s, posts: s.posts.map((p) => (p.id === id ? { ...p, images: urls } : p)) }));
         const { error } = await supabase.from('posts').insert({
           id,
           author_id: post.authorId,
@@ -430,7 +431,9 @@ export const social = {
           category: post.category,
           kind: post.kind,
           text,
-          image_url: imageUrl,
+          image_url: urls[0] ?? null,
+          images: urls,
+          video_url: input.video ?? null,
           bet_event: post.betEvent ?? null,
           bet_pick: post.betPick ?? null,
           bet_odd: post.betOdd ?? null,

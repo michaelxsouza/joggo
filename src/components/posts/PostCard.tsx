@@ -9,6 +9,8 @@ import { useToast } from '@/components/ui/Toast';
 import { useUI } from '@/app/UIContext';
 import { cn, compact, copyText, timeAgo } from '@/lib/utils';
 import { CommentsSection } from './CommentsSection';
+import { ImageCarousel, VideoEmbedView } from './PostMedia';
+import { BetCard } from './BetCard';
 
 export const postLink = (id: string) => `${window.location.origin}${window.location.pathname}#/post/${id}`;
 
@@ -102,6 +104,11 @@ function PostCardInner({ post, defaultOpenComments = false }: { post: Post; defa
             <Link to={`/perfil/${author.handle}`} className="font-bold hover:underline truncate">
               {author.name}
             </Link>
+            {author.founder && (
+              <span className="rounded-full bg-lime/15 text-lime border border-lime/30 px-1.5 py-px text-[10px] font-bold uppercase tracking-wide" title="Membro fundador da Joggo">
+                Fundador
+              </span>
+            )}
             <span className="text-ink-muted text-sm truncate">@{author.handle}</span>
             <span className="text-ink-faint text-sm" aria-hidden>
               ·
@@ -123,11 +130,9 @@ function PostCardInner({ post, defaultOpenComments = false }: { post: Post; defa
       </header>
 
       {post.text && <p className="mt-3 text-[15px] leading-relaxed whitespace-pre-wrap break-words">{post.text}</p>}
-      {post.image && (
-        <div className="mt-3 rounded-2xl overflow-hidden border border-line bg-surface">
-          <img src={post.image} alt={`Imagem da publicação de ${author.name}`} loading="lazy" className="w-full max-h-[460px] object-cover" />
-        </div>
-      )}
+      {post.kind === 'bilhete' && <BetCard post={post} isMine={isMine} />}
+      {post.images.length > 0 && <ImageCarousel images={post.images} alt={`Imagem da publicação de ${author.name}`} />}
+      {post.video && <VideoEmbedView url={post.video} />}
 
       <footer className="mt-3 -mx-2 flex items-center justify-between">
         <div className="flex items-center">

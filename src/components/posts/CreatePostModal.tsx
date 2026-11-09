@@ -1,22 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
-import { ImagePlus, Trash2 } from 'lucide-react';
+import { ImagePlus, Link2, MessageSquareText, Ticket, X } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Avatar, Chip } from '@/components/ui/misc';
 import { SelectField } from '@/components/ui/Field';
+import { parseVideoUrl } from '@/lib/video';
 import { useToast } from '@/components/ui/Toast';
 import { sel, social, useSocial } from '@/services/socialService';
 import { CATEGORIES, type Category, type ID } from '@/types/social';
 import { cn, fileToCompressedDataUrl } from '@/lib/utils';
 
-const MAX = 1000;
+const MAX = 2000;
+const MAX_IMAGES = 4;
+
+type Mode = 'post' | 'bilhete';
+const parseOdd = (v: string) => Number(v.replace(',', '.').trim());
 
 export function CreatePostModal({ open, onClose, communityId: initialCommunity }: { open: boolean; onClose: () => void; communityId?: ID }) {
   const me = useSocial(sel.me);
   const communities = useSocial((s) => s.communities.filter((c) => s.joinedCommunityIds.includes(c.id)));
   const toast = useToast();
   const [text, setText] = useState('');
-  const [image, setImage] = useState<string>();
+  const [images, setImages] = useState<string[]>([]);
+  const [mode, setMode] = useState<Mode>('post');
+  const [videoOpen, setVideoOpen] = useState(false);
+  const [video, setVideo] = useState('');
+  const [betEvent, setBetEvent] = useState('');
+  const [betPick, setBetPick] = useState('');
+  const [betOdd, setBetOdd] = useState('');
   const [category, setCategory] = useState<Category | ''>('');
   const [communityId, setCommunityId] = useState<string>('');
   const [error, setError] = useState<string>();
@@ -27,7 +38,13 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity }
   useEffect(() => {
     if (open) {
       setText('');
-      setImage(undefined);
+      setImages([]);
+      setMode('post');
+      setVideo('');
+      setVideoOpen(false);
+      setBetEvent('');
+      setBetPick('');
+      setBetOdd('');
       setError(undefined);
       const c = communities.find((x) => x.id === initialCommunity);
       setCommunityId(c?.id ?? '');
@@ -42,12 +59,17 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity }
     if (c) setCategory(c.category);
   };
 
-  const pickImage = async (f?: File) => {
-    if (!f) return;
+  const pickImages = async (files?: FileList | null) => {
+    if (!files?.length) return;
+    const room = MAX_IMAGES - images.length;
+    if (room <= 0) return setError(`Máximo de ${MAX_IMAGES} imagens por publicação.`);
     setLoadingImg(true);
     setError(undefined);
     try {
-      setImage(await fileToCompressedDataUrl(f));
+      const picked = Array.from(files).slice(0, room);
+      const out = await Promise.all(picked.map((f) => fileToCompressedDataUrl(f, 1080, 0.82)));
+      setImages((cur) => [...cur, ...out].slice(0, MAX_IMAGES));
+      if (files.length > room) setError(`Só cabem ${MAX_IMAGES} imagens por publicação.`);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -58,9 +80,18 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity }
 
   const submit = () => {
     if (!category) return setError('Escolha uma categoria para a publicação.');
+    const v = video.trim();
+    if (v && !parseVideoUrl(v)) return setError('Link de vídeo não reconhecido. Use um link do YouTube, Instagram, TikTok ou Kick.');
+    let bet: { event?: string; pick: string; odd: number } | undefined;
+    if (mode === 'bilhete') {
+      if (!betPick.trim()) return setError('Informe o palpite do bilhete.');
+      const odd = parseOdd(betOdd);
+      if (!(odd >= 1.01) || odd > 100000) return setError('Informe a odd do bilhete (ex.: 1,85).');
+      bet = { event: betEvent, pick: betPick, odd };
+    }
     try {
-      social.createPost({ text, image, category, communityId: communityId || undefined });
-      toast.success('Publicação criada!');
+      social.createPost({ text, images, video: v ? parseVideoUrl(v)!.url : undefined, category, communityId: communityId || undefined, bet });
+      toast.success(mode === 'bilhete' ? 'Bilhete publicado! Boa sorte 🍀' : 'Publicação criada!');
       onClose();
     } catch (e) {
       setError((e as Error).message);
@@ -81,12 +112,55 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity }
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={submit} disabled={(!text.trim() && !image) || tooLong || loadingImg}>
+          <Button onClick={submit} disabled={(mode === 'post' && !text.trim() && !images.length && !video.trim()) || tooLong || loadingImg}>
             Publicar
           </Button>
         </>
       }
     >
+      <div className="grid grid-cols-2 gap-1 rounded-xl border border-line bg-surface p-1 mb-4" role="tablist" aria-label="Tipo de publicação">
+        {(
+          [
+            ['post', 'Publicação', MessageSquareText],
+            ['bilhete', 'Bilhete', Ticket],
+          ] as const
+        ).map(([id, label, I]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={mode === id}
+            onClick={() => {
+              setMode(id);
+              setError(undefined);
+            }}
+            className={cn('h-9 rounded-lg text-sm font-bold inline-flex items-center justify-center gap-1.5', mode === id ? 'bg-lime text-black' : 'text-ink-muted hover:text-ink')}
+          >
+            <I className="h-4 w-4" aria-hidden /> {label}
+          </button>
+        ))}
+      </div>
+
+      {mode === 'bilhete' && (
+        <div className="mb-4 space-y-3 rounded-2xl border border-line bg-surface p-3 animate-fade-in">
+          <label className="block">
+            <span className="label block">Jogo ou evento (opcional)</span>
+            <input className="field" value={betEvent} maxLength={120} onChange={(e) => setBetEvent(e.target.value)} placeholder="Ex.: Flamengo x Palmeiras — Brasileirão" />
+          </label>
+          <div className="grid grid-cols-[1fr_110px] gap-3">
+            <label className="block">
+              <span className="label block">Palpite</span>
+              <input className="field" value={betPick} maxLength={200} onChange={(e) => { setBetPick(e.target.value); setError(undefined); }} placeholder="Ex.: Ambas marcam" />
+            </label>
+            <label className="block">
+              <span className="label block">Odd</span>
+              <input className="field tabular-nums" inputMode="decimal" value={betOdd} maxLength={9} onChange={(e) => { setBetOdd(e.target.value.replace(/[^\d.,]/g, '')); setError(undefined); }} placeholder="1,85" />
+            </label>
+          </div>
+          <p className="text-[11px] text-ink-faint">Depois do jogo, marque green ou red no seu post. O resultado não pode ser alterado.</p>
+        </div>
+      )}
+
       <div className="flex gap-3">
         <Avatar user={me} size="md" />
         <div className="flex-1 min-w-0">
@@ -105,7 +179,7 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity }
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit();
             }}
             rows={4}
-            placeholder="Compartilhe uma experiência, uma dúvida ou uma análise…"
+            placeholder={mode === 'bilhete' ? 'Conte sua análise (opcional)…' : 'Compartilhe uma experiência, uma dúvida ou uma análise…'}
             className="w-full bg-transparent resize-none text-[17px] leading-relaxed placeholder:text-ink-faint focus:outline-none focus-visible:outline-none"
           />
           <div className={cn('text-right text-xs tabular-nums', tooLong ? 'text-danger' : 'text-ink-faint')}>
@@ -114,17 +188,41 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity }
         </div>
       </div>
 
-      {image && (
-        <div className="relative mt-3 rounded-2xl overflow-hidden border border-line animate-fade-in">
-          <img src={image} alt="Pré-visualização da imagem selecionada" className="w-full max-h-80 object-cover" />
-          <button
-            type="button"
-            onClick={() => setImage(undefined)}
-            className="absolute top-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-sm font-semibold hover:bg-black/85"
-          >
-            <Trash2 className="h-4 w-4" /> Remover
-          </button>
+      {images.length > 0 && (
+        <div className={cn('mt-3 grid gap-2 animate-fade-in', images.length > 1 ? 'grid-cols-2' : 'grid-cols-1')}>
+          {images.map((src, i) => (
+            <div key={i} className="relative rounded-2xl overflow-hidden border border-line bg-black">
+              <img src={src} alt={`Pré-visualização da imagem ${i + 1}`} className={cn('w-full object-contain', images.length > 1 ? 'aspect-square object-cover' : 'max-h-80')} />
+              <button
+                type="button"
+                aria-label={`Remover imagem ${i + 1}`}
+                onClick={() => setImages((cur) => cur.filter((_, k) => k !== i))}
+                className="absolute top-2 right-2 grid h-8 w-8 place-items-center rounded-full bg-black/70 hover:bg-black/85"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
         </div>
+      )}
+
+      {videoOpen && (
+        <label className="block mt-3 animate-fade-in">
+          <span className="label block">Link do vídeo</span>
+          <input
+            className="field"
+            type="url"
+            inputMode="url"
+            value={video}
+            onChange={(e) => { setVideo(e.target.value); setError(undefined); }}
+            placeholder="Cole um link do YouTube, Instagram, TikTok ou Kick"
+          />
+          {video.trim() && (
+            <span className={cn('block text-xs mt-1', parseVideoUrl(video) ? 'text-lime' : 'text-danger')}>
+              {parseVideoUrl(video) ? `Vídeo do ${parseVideoUrl(video)!.label} reconhecido.` : 'Link não reconhecido.'}
+            </span>
+          )}
+        </label>
       )}
 
       <fieldset className="mt-4">
@@ -148,11 +246,21 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity }
       </SelectField>
 
       <div className="mt-4 flex items-center gap-3">
-        <input ref={fileRef} type="file" accept="image/*" className="sr-only" id="compose-image" onChange={(e) => pickImage(e.target.files?.[0])} />
-        <Button variant="secondary" size="sm" icon={<ImagePlus className="h-4 w-4" />} loading={loadingImg} onClick={() => fileRef.current?.click()}>
-          {image ? 'Trocar imagem' : 'Adicionar imagem'}
+        <input ref={fileRef} type="file" accept="image/*" multiple className="sr-only" id="compose-image" onChange={(e) => pickImages(e.target.files)} />
+        <Button variant="secondary" size="sm" icon={<ImagePlus className="h-4 w-4" />} loading={loadingImg} disabled={images.length >= MAX_IMAGES} onClick={() => fileRef.current?.click()}>
+          {images.length ? `Imagens (${images.length}/${MAX_IMAGES})` : 'Imagens'}
         </Button>
-        <span className="text-xs text-ink-faint">JPG, PNG ou WEBP até 10 MB</span>
+        <Button
+          variant="secondary"
+          size="sm"
+          icon={<Link2 className="h-4 w-4" />}
+          onClick={() => {
+            if (videoOpen) setVideo('');
+            setVideoOpen((v) => !v);
+          }}
+        >
+          {videoOpen ? 'Remover vídeo' : 'Vídeo'}
+        </Button>
       </div>
 
       {error && (
