@@ -59,7 +59,7 @@ export function RightRail() {
                   <img src={c.cover} alt="" className="h-11 w-11 rounded-xl object-cover border border-line" />
                   <div className="min-w-0">
                     <p className="font-semibold text-sm leading-snug line-clamp-2 group-hover:underline">{c.name}</p>
-                    <p className="text-xs text-ink-muted">{compact(sel.memberCount(state, c))} membros</p>
+                    <p className="text-xs text-ink-muted">{compact(sel.memberCount(state, c))} {sel.memberCount(state, c) === 1 ? "membro" : "membros"}</p>
                   </div>
                 </Link>
                 <JoinButton community={c} />

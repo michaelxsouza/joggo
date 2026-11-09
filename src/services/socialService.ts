@@ -20,6 +20,17 @@ import type {
   SocialState,
   User,
 } from '@/types/social';
+import coverFutebol from '@/assets/demo/futebol.svg';
+import coverPoker from '@/assets/demo/poker.svg';
+import coverRoleta from '@/assets/demo/roleta.svg';
+import coverSlots from '@/assets/demo/slots.svg';
+import coverCassino from '@/assets/demo/cassino.svg';
+import coverBasquete from '@/assets/demo/basquete.svg';
+import coverTorneio from '@/assets/demo/torneio.svg';
+
+// Capa padrão quando a comunidade não tem imagem própria
+const SLUG_COVER: Record<string, string> = { 'nba-basquete': coverBasquete, 'bilhete-do-dia': coverTorneio, 'futebol-europeu': coverFutebol };
+const CATEGORY_COVER: Record<string, string> = { esportes: coverFutebol, poker: coverPoker, roleta: coverRoleta, slots: coverSlots, cassino: coverCassino };
 
 // ---------- Store em memória ----------
 const emptyState = (): SocialState => ({
@@ -231,7 +242,7 @@ export function loadSocial(silent = false): Promise<void> {
         name: c.name,
         category: c.category,
         description: c.description,
-        cover: c.cover_url ?? '',
+        cover: c.cover_url || SLUG_COVER[c.slug] || CATEGORY_COVER[c.category] || coverFutebol,
         rules: c.rules ?? [],
         baseMembers: memberRows.filter((m) => m.community_id === c.id && m.user_id !== uidMe).length,
         memberIds: memberRows.filter((m) => m.community_id === c.id && m.user_id !== uidMe).map((m) => m.user_id),

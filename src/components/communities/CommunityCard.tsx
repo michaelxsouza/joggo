@@ -23,7 +23,7 @@ export function CommunityCard({ community: c }: { community: Community }) {
         <div className="flex items-center gap-2 text-xs text-ink-muted font-semibold">
           <span>{categoryLabel(c.category)}</span>
           <span aria-hidden>·</span>
-          <span>{compact(members)} membros</span>
+          <span>{compact(members)} {members === 1 ? "membro" : "membros"}</span>
         </div>
         <Link to={`/comunidades/${c.slug}`} className="font-bold text-[17px] mt-1 hover:underline">
           {c.name}

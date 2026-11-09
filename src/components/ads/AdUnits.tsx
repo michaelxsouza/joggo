@@ -3,7 +3,7 @@ import { ExternalLink, EyeOff, Flag, HelpCircle, Megaphone } from 'lucide-react'
 import type { Campaign, Placement } from '@/types/ads';
 import { placementLabel } from '@/types/ads';
 import { categoryLabel, type Category } from '@/types/social';
-import { ads, adsStore, delivery, measurement, useAds } from '@/services/adsService';
+import { ADS_ENABLED, ads, adsStore, delivery, measurement, useAds } from '@/services/adsService';
 import { Menu } from '@/components/ui/misc';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -113,7 +113,14 @@ export function AdView({ campaign, advertiserName, variant, preview, onCta, onWh
 }
 
 /** Espaço de anúncio: escolhe uma campanha elegível, mede impressão/clique (simulado) e oferece controles ao usuário. */
-export function AdSlot({ placement, categories, seed, variant, context }: { placement: Placement; categories: Category[]; seed: number; variant: AdVariant; context?: string }) {
+type AdSlotProps = { placement: Placement; categories: Category[]; seed: number; variant: AdVariant; context?: string };
+
+/** Anúncios desligados no beta: não renderiza nada. */
+export function AdSlot(props: AdSlotProps) {
+  return ADS_ENABLED ? <AdSlotInner {...props} /> : null;
+}
+
+function AdSlotInner({ placement, categories, seed, variant, context }: AdSlotProps) {
   const campaign = useAds((s) => delivery.pick(s, placement, categories, seed));
   const advertiser = useAds((s) => s.advertisers.find((a) => a.id === campaign?.advertiserId));
   const [why, setWhy] = useState(false);
