@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Info, Mail } from 'lucide-react';
-import { AuthLayout, GoogleIcon } from '@/components/auth/AuthLayout';
+import { Mail } from 'lucide-react';
+import { AuthLayout } from '@/components/auth/AuthLayout';
 import { IconField, PasswordField } from '@/components/auth/PasswordField';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -9,42 +9,12 @@ import { useToast } from '@/components/ui/Toast';
 import { auth, isEmail } from '@/services/authService';
 import { useDocumentTitle } from '@/lib/hooks';
 
-export function DemoAuthNotice() {
-  return (
-    <div className="flex items-start gap-2 rounded-xl border border-info/25 bg-info/5 px-3 py-2.5 text-xs text-ink-muted">
-      <Info className="h-4 w-4 text-info shrink-0" aria-hidden />
-      <p>
-        <strong className="text-ink">Modo demonstração:</strong> não há autenticação real. Qualquer e-mail e senha válidos entram no perfil de exemplo, e a senha não é salva.
-      </p>
-    </div>
-  );
-}
-
 export function AuthDivider() {
   return (
     <div className="flex items-center gap-3 my-5 text-sm text-ink-faint" aria-hidden>
       <span className="h-px flex-1 bg-line" /> ou <span className="h-px flex-1 bg-line" />
     </div>
   );
-}
-
-export function useGoogleSignIn() {
-  const toast = useToast();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const run = async (to: string) => {
-    setLoading(true);
-    try {
-      await auth.signInWithGoogle();
-      toast.info('Login com Google depende de integração OAuth. Você entrou em modo demonstração.');
-      navigate(to, { replace: true });
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-  return { run, loading };
 }
 
 export default function LoginPage() {
@@ -55,11 +25,9 @@ export default function LoginPage() {
   const from = (location.state as { from?: string } | null)?.from ?? '/';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(true);
   const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({});
   const [loading, setLoading] = useState(false);
   const [forgot, setForgot] = useState(false);
-  const google = useGoogleSignIn();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +40,7 @@ export default function LoginPage() {
     if (Object.keys(errs).length) return;
     setLoading(true);
     try {
-      await auth.signInWithPassword(email, password, remember);
+      await auth.signInWithPassword(email, password);
       setPassword('');
       toast.success('Bem-vindo de volta!');
       navigate(from, { replace: true });
@@ -117,11 +85,7 @@ export default function LoginPage() {
           }}
           error={errors.password}
         />
-        <div className="flex items-center justify-between gap-3 text-sm">
-          <label className="inline-flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="accent-[#B0FF35] h-4 w-4" />
-            Lembrar de mim
-          </label>
+        <div className="flex items-center justify-end gap-3 text-sm">
           <button type="button" onClick={() => setForgot(true)} className="font-semibold text-lime hover:underline">
             Esqueci minha senha
           </button>
@@ -136,12 +100,6 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <AuthDivider />
-
-      <Button variant="outline" size="lg" block loading={google.loading} icon={<GoogleIcon className="h-5 w-5" />} onClick={() => google.run(from)}>
-        Continuar com Google
-      </Button>
-
       <p className="text-center mt-6 text-[15px] text-ink-muted">
         Ainda não tem conta?{' '}
         <Link to="/criar-conta" className="font-bold text-lime hover:underline">
@@ -150,7 +108,6 @@ export default function LoginPage() {
       </p>
 
       <div className="mt-6 space-y-4">
-        <DemoAuthNotice />
         <p className="text-center text-xs text-ink-faint leading-relaxed">
           Ao continuar, você concorda com os{' '}
           <Link to="/termos" className="underline hover:text-ink">
@@ -209,7 +166,7 @@ function ForgotPasswordModal({ open, onClose, initialEmail }: { open: boolean; o
           <p className="text-[15px] text-ink-muted">
             Se houver uma conta com <strong className="text-ink">{email}</strong>, você receberá um link de recuperação em instantes.
           </p>
-          <p className="text-xs text-ink-faint">Demonstração: nenhum e-mail é enviado até existir integração de envio.</p>
+          <p className="text-xs text-ink-faint">Não chegou? Confira a pasta de spam.</p>
           <Button block onClick={close}>
             Voltar ao login
           </Button>

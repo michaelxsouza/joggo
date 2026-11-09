@@ -1,13 +1,12 @@
-// Autenticação — implementação de DEMONSTRAÇÃO.
-// Não há verificação de senha: nenhuma senha é enviada ou armazenada.
-// Para produção, implemente `AuthProvider` com um backend (ex.: Supabase Auth) e troque `auth` abaixo.
+// Autenticação real com Supabase Auth.
+// O perfil (nome, @usuário, nascimento) é criado no banco por trigger a partir dos metadados do cadastro.
 import { useSyncExternalStore } from 'react';
-import { safeGet, safeRemove, safeSet } from '@/lib/store';
+import type { AuthError } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
 export interface Session {
-  mode: 'demo';
-  provider: 'email' | 'google';
-  startedAt: string;
+  userId: string;
+  email: string;
 }
 
 export interface SignUpInput {
@@ -18,66 +17,42 @@ export interface SignUpInput {
   birthDate: string; // yyyy-mm-dd
 }
 
-export interface AuthProvider {
-  readonly isDemo: boolean;
-  getSession(): Session | null;
-  signInWithPassword(email: string, password: string, remember: boolean): Promise<Session>;
-  signInWithGoogle(): Promise<Session>;
-  signUp(input: SignUpInput): Promise<Session>;
-  requestPasswordReset(email: string): Promise<void>;
-  signOut(): void;
-  subscribe(fn: () => void): () => void;
+interface AuthState {
+  ready: boolean; // sessão inicial já carregada
+  session: Session | null;
+  recovery: boolean; // usuário voltou pelo link de "esqueci minha senha"
 }
 
-const KEY = 'joggo:session';
+let state: AuthState = { ready: false, session: null, recovery: false };
 const listeners = new Set<() => void>();
-const emit = () => listeners.forEach((l) => l());
-
-const readSession = (): Session | null => {
-  const raw = safeGet(KEY) ?? sessionGet();
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as Session;
-  } catch {
-    return null;
-  }
+const set = (patch: Partial<AuthState>) => {
+  state = { ...state, ...patch };
+  listeners.forEach((l) => l());
 };
 
-function sessionGet() {
-  try {
-    return window.sessionStorage.getItem(KEY);
-  } catch {
-    return null;
-  }
-}
-function sessionSet(v: string | null) {
-  try {
-    if (v === null) window.sessionStorage.removeItem(KEY);
-    else window.sessionStorage.setItem(KEY, v);
-  } catch {
-    /* ignora */
-  }
-}
+const toSession = (u: { id: string; email?: string } | null | undefined): Session | null =>
+  u ? { userId: u.id, email: u.email ?? '' } : null;
 
-let current: Session | null = readSession();
+supabase.auth.getSession().then(({ data }) => set({ ready: true, session: toSession(data.session?.user) }));
+supabase.auth.onAuthStateChange((event, s) => {
+  set({ ready: true, session: toSession(s?.user), ...(event === 'PASSWORD_RECOVERY' ? { recovery: true } : {}) });
+});
 
-function start(provider: Session['provider'], remember: boolean): Session {
-  const s: Session = { mode: 'demo', provider, startedAt: new Date().toISOString() };
-  const json = JSON.stringify(s);
-  // "Lembrar de mim": persiste no navegador; caso contrário, só nesta aba.
-  if (remember) {
-    safeSet(KEY, json);
-    sessionSet(null);
-  } else {
-    safeRemove(KEY);
-    sessionSet(json);
-  }
-  current = s;
-  emit();
-  return s;
+/** Traduz os erros do Supabase para mensagens amigáveis. */
+function friendly(e: AuthError | Error): Error {
+  const m = e.message.toLowerCase();
+  if (m.includes('invalid login credentials')) return new Error('E-mail ou senha incorretos.');
+  if (m.includes('email not confirmed')) return new Error('Confirme seu e-mail antes de entrar. Procure o link na sua caixa de entrada (e no spam).');
+  if (m.includes('already registered') || m.includes('already been registered')) return new Error('Já existe uma conta com este e-mail. Tente entrar.');
+  if (m.includes('database error saving new user')) return new Error('Não foi possível criar a conta. Confira se o @usuário está livre e se você tem 18 anos ou mais.');
+  if (m.includes('rate limit') || m.includes('too many')) return new Error('Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente de novo.');
+  if (m.includes('password should be')) return new Error('Senha muito fraca. Use pelo menos 8 caracteres com letras e números.');
+  if (m.includes('same password') || m.includes('different from the old')) return new Error('A nova senha precisa ser diferente da anterior.');
+  if (m.includes('failed to fetch') || m.includes('network')) return new Error('Sem conexão com o servidor. Verifique sua internet.');
+  return new Error('Algo deu errado. Tente novamente.');
 }
 
-const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const appUrl = () => window.location.origin + window.location.pathname;
 
 // ---------- Validações compartilhadas ----------
 export const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
@@ -101,39 +76,61 @@ export function passwordStrength(p: string): { score: 0 | 1 | 2 | 3 | 4; label: 
   return { score: score as 0 | 1 | 2 | 3 | 4, label: labels[score]! };
 }
 
-export const auth: AuthProvider = {
-  isDemo: true,
-  getSession: () => current,
-  async signInWithPassword(email, password, remember) {
+export const auth = {
+  getState: () => state,
+  async signInWithPassword(email: string, password: string): Promise<void> {
     if (!isEmail(email)) throw new Error('Informe um e-mail válido.');
-    if (password.length < 8) throw new Error('A senha tem pelo menos 8 caracteres.');
-    await wait(500);
-    // Demonstração: qualquer e-mail/senha válidos entram no perfil de exemplo. A senha é descartada.
-    return start('email', remember);
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (error) throw friendly(error);
   },
-  async signInWithGoogle() {
-    await wait(400);
-    return start('google', true);
-  },
-  async signUp(input) {
+  /** Retorna `needsConfirmation: true` quando o Supabase exige confirmar o e-mail antes do login. */
+  async signUp(input: SignUpInput): Promise<{ needsConfirmation: boolean }> {
     if (ageFrom(input.birthDate) < 18) throw new Error('A Joggo é exclusiva para maiores de 18 anos.');
-    await wait(600);
-    return start('email', true);
+    const handle = input.handle.trim().replace(/^@/, '').toLowerCase();
+    const { data: free, error: hErr } = await supabase.rpc('handle_available', { h: handle });
+    if (hErr) throw friendly(hErr);
+    if (!free) throw new Error('Este @usuário já está em uso. Escolha outro.');
+    const { data, error } = await supabase.auth.signUp({
+      email: input.email.trim(),
+      password: input.password,
+      options: {
+        emailRedirectTo: appUrl(),
+        data: { name: input.name.trim(), handle, birth_date: input.birthDate },
+      },
+    });
+    if (error) throw friendly(error);
+    // Com confirmação de e-mail ativa, o Supabase devolve usuário sem sessão.
+    // Se o e-mail já existir, devolve usuário sem identidades.
+    if (data.user && data.user.identities?.length === 0) throw new Error('Já existe uma conta com este e-mail. Tente entrar.');
+    return { needsConfirmation: !data.session };
   },
-  async requestPasswordReset(email) {
+  async isHandleAvailable(handle: string): Promise<boolean> {
+    const { data, error } = await supabase.rpc('handle_available', { h: handle.trim().replace(/^@/, '').toLowerCase() });
+    if (error) return true; // não bloqueia o formulário; o banco valida no envio
+    return Boolean(data);
+  },
+  async requestPasswordReset(email: string): Promise<void> {
     if (!isEmail(email)) throw new Error('Informe um e-mail válido.');
-    await wait(500);
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: appUrl() });
+    if (error) throw friendly(error);
   },
-  signOut() {
-    safeRemove(KEY);
-    sessionSet(null);
-    current = null;
-    emit();
+  async updatePassword(password: string): Promise<void> {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw friendly(error);
+    set({ recovery: false });
   },
-  subscribe(fn) {
+  async signOut(): Promise<void> {
+    await supabase.auth.signOut();
+    set({ session: null, recovery: false });
+  },
+  subscribe(fn: () => void) {
     listeners.add(fn);
-    return () => listeners.delete(fn);
+    return () => {
+      listeners.delete(fn);
+    };
   },
 };
 
-export const useSession = () => useSyncExternalStore(auth.subscribe, auth.getSession);
+const getState = () => state;
+export const useAuth = () => useSyncExternalStore(auth.subscribe, getState);
+export const useSession = () => useAuth().session;

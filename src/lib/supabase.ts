@@ -8,5 +8,6 @@ const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
 export const supabaseConfigured = Boolean(url && key);
 
 export const supabase = createClient(url ?? 'http://localhost', key ?? 'missing-key', {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+  // PKCE: o retorno dos links de e-mail vem em ?code=..., sem conflitar com o HashRouter (#/rota)
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' },
 });

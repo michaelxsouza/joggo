@@ -1,16 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AtSign, CalendarDays, Mail, User } from 'lucide-react';
-import { AuthLayout, GoogleIcon } from '@/components/auth/AuthLayout';
+import { AuthLayout } from '@/components/auth/AuthLayout';
 import { IconField, PasswordField } from '@/components/auth/PasswordField';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { ageFrom, auth, isEmail, passwordStrength } from '@/services/authService';
-import { social, socialStore } from '@/services/socialService';
-import { safeSet } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { useDocumentTitle } from '@/lib/hooks';
-import { AuthDivider, DemoAuthNotice, useGoogleSignIn } from './LoginPage';
+import { MailCheck } from 'lucide-react';
 
 type Errors = Partial<Record<'name' | 'handle' | 'email' | 'birthDate' | 'password' | 'terms' | 'form', string>>;
 
@@ -18,7 +16,7 @@ export default function SignUpPage() {
   useDocumentTitle('Criar conta');
   const navigate = useNavigate();
   const toast = useToast();
-  const google = useGoogleSignIn();
+  const [confirmEmail, setConfirmEmail] = useState<string | null>(null);
   const [f, setF] = useState({ name: '', handle: '', email: '', birthDate: '', password: '', terms: false });
   const [errors, setErrors] = useState<Errors>({});
   const [loading, setLoading] = useState(false);
@@ -35,8 +33,7 @@ export default function SignUpPage() {
     const handle = f.handle.trim().replace(/^@/, '');
     if (f.name.trim().length < 2) errs.name = 'Informe seu nome.';
     if (!/^[a-z0-9._]{3,20}$/i.test(handle)) errs.handle = 'De 3 a 20 caracteres: letras, números, ponto ou _.';
-    else if (socialStore.get().users.some((u) => u.id !== socialStore.get().currentUserId && u.handle.toLowerCase() === handle.toLowerCase()))
-      errs.handle = 'Este @usuário já está em uso.';
+    else if (!(await auth.isHandleAvailable(handle))) errs.handle = 'Este @usuário já está em uso.';
     if (!isEmail(f.email)) errs.email = 'Informe um e-mail válido.';
     if (!f.birthDate) errs.birthDate = 'Informe sua data de nascimento.';
     else if (ageFrom(f.birthDate) < 18) errs.birthDate = 'A Joggo é exclusiva para maiores de 18 anos.';
@@ -48,10 +45,11 @@ export default function SignUpPage() {
     if (Object.keys(errs).length) return;
     setLoading(true);
     try {
-      await auth.signUp({ ...f, handle });
-      // Demonstração: a nova conta personaliza o perfil de exemplo. A senha não é salva.
-      social.updateProfile({ name: f.name.trim(), handle });
-      safeSet('joggo:age-ok', '1');
+      const { needsConfirmation } = await auth.signUp({ ...f, handle });
+      if (needsConfirmation) {
+        setConfirmEmail(f.email.trim());
+        return;
+      }
       toast.success(`Conta criada! Bem-vindo(a), ${f.name.trim().split(' ')[0]}.`);
       navigate('/', { replace: true });
     } catch (err) {
@@ -67,6 +65,23 @@ export default function SignUpPage() {
     return d.toISOString().slice(0, 10);
   })();
 
+  if (confirmEmail)
+    return (
+      <AuthLayout>
+        <div className="text-center">
+          <MailCheck className="h-12 w-12 text-lime mx-auto" aria-hidden />
+          <h1 className="text-[26px] font-extrabold tracking-tight mt-4">Confirme seu e-mail</h1>
+          <p className="text-ink-muted mt-2">
+            Enviamos um link para <strong className="text-ink">{confirmEmail}</strong>. Clique nele para ativar sua conta e depois entre na Joggo.
+          </p>
+          <p className="text-xs text-ink-faint mt-3">Não chegou? Confira a pasta de spam.</p>
+          <Link to="/entrar" className="inline-block mt-6 font-bold text-lime hover:underline">
+            Ir para o login
+          </Link>
+        </div>
+      </AuthLayout>
+    );
+
   return (
     <AuthLayout>
       <div className="text-center mb-6">
@@ -74,10 +89,6 @@ export default function SignUpPage() {
         <p className="text-ink-muted mt-1">Leva menos de um minuto.</p>
       </div>
 
-      <Button variant="outline" size="lg" block loading={google.loading} icon={<GoogleIcon className="h-5 w-5" />} onClick={() => google.run('/')}>
-        Continuar com Google
-      </Button>
-      <AuthDivider />
 
       <form onSubmit={submit} noValidate className="space-y-4">
         <IconField label="Nome" autoComplete="name" icon={<User className="h-[18px] w-[18px]" />} value={f.name} onChange={(e) => up('name', e.target.value)} error={errors.name} maxLength={50} placeholder="Como você quer ser chamado" />
@@ -144,7 +155,6 @@ export default function SignUpPage() {
         </Link>
       </p>
       <div className="mt-6">
-        <DemoAuthNotice />
       </div>
     </AuthLayout>
   );

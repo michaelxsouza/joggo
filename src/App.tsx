@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ToastProvider } from '@/components/ui/Toast';
 import { UIProvider } from '@/app/UIContext';
-import { AgeGate } from '@/app/AgeGate';
 import { AppShell } from '@/components/layout/AppShell';
 import { reconcileCampaigns } from '@/services/adsService';
 import FeedPage from '@/pages/FeedPage';
@@ -23,24 +22,27 @@ import NotFound from '@/pages/NotFound';
 import LoginPage from '@/pages/auth/LoginPage';
 import SignUpPage from '@/pages/auth/SignUpPage';
 import TermsPage from '@/pages/auth/TermsPage';
-import { useSession } from '@/services/authService';
+import NewPasswordPage from '@/pages/auth/NewPasswordPage';
+import { useAuth } from '@/services/authService';
+
+function Splash() {
+  return <div className="min-h-dvh grid place-items-center text-ink-faint text-sm" aria-busy="true">Carregando…</div>;
+}
 
 /** Protege as rotas do app: sem sessão, vai para /entrar e volta depois. */
 function RequireAuth({ children }: { children: React.ReactNode }) {
-  const session = useSession();
+  const { ready, session, recovery } = useAuth();
   const location = useLocation();
+  if (!ready) return <Splash />;
+  if (recovery && session) return <NewPasswordPage />;
   if (!session) return <Navigate to="/entrar" replace state={{ from: location.pathname + location.search }} />;
-  return (
-    <>
-      {children}
-      <AgeGate />
-    </>
-  );
+  return <>{children}</>;
 }
 
 function GuestOnly({ children }: { children: React.ReactNode }) {
-  const session = useSession();
+  const { ready, session } = useAuth();
   const location = useLocation();
+  if (!ready) return <Splash />;
   const from = (location.state as { from?: string } | null)?.from ?? '/';
   return session ? <Navigate to={from} replace /> : <>{children}</>;
 }
