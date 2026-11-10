@@ -74,9 +74,12 @@ export function EmojiButton({ onPick, placement = 'bottom', align = 'left', clas
           role="dialog"
           aria-label="Escolher emoji"
           className={cn(
-            'absolute z-50 w-[300px] max-w-[calc(100vw-32px)] rounded-2xl border border-line bg-bg shadow-pop',
-            placement === 'top' ? 'bottom-full mb-2' : 'top-full mt-2',
-            align === 'right' ? 'right-0' : 'left-0',
+            'z-50 rounded-2xl border border-line bg-bg shadow-pop',
+            // celular: painel fixo e centralizado, nunca sai da tela
+            'max-sm:fixed max-sm:inset-x-4 max-sm:bottom-24',
+            'sm:absolute sm:w-[300px]',
+            placement === 'top' ? 'sm:bottom-full sm:mb-2' : 'sm:top-full sm:mt-2',
+            align === 'right' ? 'sm:right-0' : 'sm:left-0',
           )}
         >
           <div className="flex border-b border-line px-1" role="tablist">
@@ -96,7 +99,7 @@ export function EmojiButton({ onPick, placement = 'bottom', align = 'left', clas
             ))}
           </div>
           <p className="px-3 pt-2 text-[11px] font-bold uppercase tracking-wide text-ink-faint">{current.label}</p>
-          <div className="grid grid-cols-8 gap-0.5 p-2 max-h-56 overflow-y-auto">
+          <div className="grid grid-cols-8 gap-0.5 p-2 max-h-56 justify-items-center overflow-y-auto">
             {current.emojis.split(' ').map((e) => (
               <button
                 key={e}

@@ -1,7 +1,7 @@
 import { EmojiButton, insertAtCaret } from '@/components/posts/EmojiPicker';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Info, MessageSquarePlus, MessagesSquare, Search, Send } from 'lucide-react';
+import { ArrowLeft, MessageSquarePlus, MessagesSquare, Search, Send } from 'lucide-react';
 import { sel, social, useSocial } from '@/services/socialService';
 import { Avatar, EmptyState } from '@/components/ui/misc';
 import { Button, IconButton } from '@/components/ui/Button';
@@ -9,17 +9,6 @@ import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { cn, timeAgo, timeHM } from '@/lib/utils';
 import { useDocumentTitle } from '@/lib/hooks';
-
-function DemoBanner() {
-  return (
-    <div className="flex items-start gap-2 rounded-xl border border-info/25 bg-info/5 px-3 py-2 text-xs text-ink-muted">
-      <Info className="h-4 w-4 text-info shrink-0 mt-px" aria-hidden />
-      <span>
-        <strong className="text-ink">Demonstração:</strong> as mensagens ficam salvas apenas neste navegador e não são entregues a outras pessoas até existir backend.
-      </span>
-    </div>
-  );
-}
 
 export default function MessagesPage() {
   useDocumentTitle('Mensagens');
@@ -68,7 +57,6 @@ export default function MessagesPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-muted" aria-hidden />
               <input id="conv-q" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar conversas" className="field pl-9 h-10 rounded-full text-sm" />
             </div>
-            <DemoBanner />
           </div>
           <ul className="flex-1 overflow-y-auto">
             {conversations.length === 0 && (
@@ -170,7 +158,6 @@ function Chat({ conversationId }: { conversationId: string }) {
             <p className="text-xs text-ink-muted truncate">@{user.handle}</p>
           </div>
         </Link>
-        <span className="ml-auto text-[11px] font-bold uppercase tracking-wide text-info border border-info/30 rounded-md px-1.5 py-0.5">Demo</span>
       </header>
       <div className="flex-1 overflow-y-auto px-3 lg:px-5 py-4 space-y-1.5" aria-live="polite">
         {messages.length === 0 && <p className="text-center text-sm text-ink-muted py-10">Diga olá para {user.name.split(' ')[0]} 👋</p>}
