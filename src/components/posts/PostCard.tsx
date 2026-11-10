@@ -42,7 +42,9 @@ function PostCardInner({ post, defaultOpenComments = false }: { post: Post; defa
     { label: 'Copiar link', icon: <Link2 className="h-4 w-4" />, onSelect: share },
     { label: 'Ver perfil do autor', icon: <Users className="h-4 w-4" />, onSelect: () => navigate(`/perfil/${author.handle}`) },
   ];
-  if (isMine) {
+  // Bilhete fica travado: só pode ser excluído nos primeiros 10 minutos e enquanto pendente
+  const betLocked = post.kind === 'bilhete' && (post.betResult !== 'pendente' || Date.now() - new Date(post.createdAt).getTime() > 10 * 60 * 1000);
+  if (isMine && !betLocked) {
     menu.push({
       label: 'Excluir publicação',
       icon: <Trash2 className="h-4 w-4" />,

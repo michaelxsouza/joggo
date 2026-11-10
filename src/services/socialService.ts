@@ -117,7 +117,7 @@ function fail(e: unknown) {
   const raw = (e as { message?: string })?.message ?? String(e);
   const m = raw.toLowerCase();
   const msg =
-    m.includes('limite de') || m.includes('rápido demais') || m.includes('bilhete') || m.includes('não é possível') || m.includes('você não pode') || m.includes('muitas mensagens')
+    m.includes('limite de') || m.includes('rápido demais') || m.includes('bilhete') || m.includes('histórico') || m.includes('não é possível') || m.includes('você não pode') || m.includes('muitas mensagens')
       ? raw
       : m.includes('duplicate key') && m.includes('handle')
         ? 'Este @usuário já está em uso.'
