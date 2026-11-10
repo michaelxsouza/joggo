@@ -32,7 +32,7 @@ export default function NewPasswordPage() {
   };
 
   return (
-    <AuthLayout>
+    <AuthLayout landing={false}>
       <div className="text-center mb-7">
         <h1 className="text-[28px] font-extrabold tracking-tight">Crie uma nova senha</h1>
         <p className="text-ink-muted mt-1">Escolha uma senha que você não usa em outros sites.</p>

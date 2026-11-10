@@ -3,6 +3,7 @@ import { CircleDot, Dices, Heart, MessageCircle, MoreHorizontal, Spade, Trophy }
 import { Logo } from '@/components/brand/Logo';
 import { Avatar } from '@/components/ui/misc';
 import { cn } from '@/lib/utils';
+import { LandingSeo } from './LandingSeo';
 import poker from '@/assets/demo/poker.svg';
 import futebol from '@/assets/demo/futebol.svg';
 import roleta from '@/assets/demo/roleta.svg';
@@ -107,7 +108,7 @@ function Collage() {
   );
 }
 
-export function AuthLayout({ children }: { children: ReactNode }) {
+export function AuthLayout({ children, landing = true }: { children: ReactNode; landing?: boolean }) {
   return (
     <div className="min-h-dvh bg-bg relative overflow-hidden">
       {/* textura sutil */}
@@ -121,7 +122,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
               <br />
               <span className="text-lime">Sua comunidade.</span>
             </h1>
-            <p className="mt-4 text-lg text-ink-muted max-w-md">Conecte-se com quem compartilha a sua paixão por jogos.</p>
+            <p className="mt-4 text-lg text-ink-muted max-w-md">A rede social de apostas esportivas, bilhetes e palpites de futebol — com histórico de acertos real.</p>
           </div>
           <Collage />
         </section>
@@ -139,6 +140,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
           </div>
         </section>
       </div>
+      {landing && <LandingSeo />}
     </div>
   );
 }

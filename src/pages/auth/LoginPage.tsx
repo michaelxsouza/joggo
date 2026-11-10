@@ -18,7 +18,7 @@ export function AuthDivider() {
 }
 
 export default function LoginPage() {
-  useDocumentTitle('Entrar');
+  useDocumentTitle(''); // título completo de SEO na página de entrada
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();

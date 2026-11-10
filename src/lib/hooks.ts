@@ -18,6 +18,6 @@ export const useIsMobile = () => useMediaQuery('(max-width: 1023px)');
 
 export function useDocumentTitle(title: string) {
   useEffect(() => {
-    document.title = title ? `${title} · Joggo` : 'Joggo — Seu jogo. Sua comunidade.';
+    document.title = title ? `${title} · Joggo` : 'Joggo — Rede social de apostas esportivas, bilhetes e palpites de futebol';
   }, [title]);
 }
