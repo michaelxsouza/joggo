@@ -15,7 +15,7 @@ const MAX_IMAGES = 4;
 type Mode = 'post' | 'bilhete';
 const parseOdd = (v: string) => Number(v.replace(',', '.').trim());
 
-export function CreatePostModal({ open, onClose, communityId: initialCommunity }: { open: boolean; onClose: () => void; communityId?: ID }) {
+export function CreatePostModal({ open, onClose, communityId: initialCommunity, initialMode = 'post' }: { open: boolean; onClose: () => void; communityId?: ID; initialMode?: Mode }) {
   const me = useSocial(sel.me);
   const communities = useSocial((s) => s.communities.filter((c) => s.joinedCommunityIds.includes(c.id)));
   const toast = useToast();
@@ -36,7 +36,7 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity }
     if (open) {
       setText('');
       setImages([]);
-      setMode('post');
+      setMode(initialMode);
       setBetEvent('');
       setBetPick('');
       setBetOdd('');

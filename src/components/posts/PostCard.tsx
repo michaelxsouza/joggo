@@ -11,6 +11,7 @@ import { cn, compact, copyText, timeAgo } from '@/lib/utils';
 import { CommentsSection } from './CommentsSection';
 import { ImageCarousel } from './PostMedia';
 import { BetCard } from './BetCard';
+import { TipsterBadge } from '@/components/profile/TipsterStats';
 
 export const postLink = (id: string) => `${window.location.origin}${window.location.pathname}#/post/${id}`;
 
@@ -109,6 +110,7 @@ function PostCardInner({ post, defaultOpenComments = false }: { post: Post; defa
                 Fundador
               </span>
             )}
+            <TipsterBadge userId={author.id} />
             <span className="text-ink-muted text-sm truncate">@{author.handle}</span>
             <span className="text-ink-faint text-sm" aria-hidden>
               ·

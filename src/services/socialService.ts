@@ -45,6 +45,7 @@ const emptyState = (): SocialState => ({
   hiddenPostIds: [],
   followingIds: [],
   follows: [],
+  tipsterStats: {},
   joinedCommunityIds: [],
   blockedUserIds: [],
   reports: [],
@@ -151,6 +152,7 @@ const toUser = (r: any, followers: number, following: number): User => ({
   followers,
   following,
   founder: r.founder,
+  onboarded: r.onboarded,
 });
 
 const toPost = (r: any, likedByMe: boolean): Post => ({
@@ -208,10 +210,11 @@ export function loadSocial(silent = false): Promise<void> {
         supabase.from('notification_prefs').select('*').maybeSingle(),
         supabase.from('conversation_members').select('conversation_id,user_id,last_read_at'),
         supabase.from('messages').select('*').order('created_at').limit(2000),
+        supabase.from('tipster_stats').select('author_id,greens,reds,pendentes'),
       ]);
       const firstErr = q.find((r) => r.error)?.error;
       if (firstErr) throw firstErr;
-      const [profiles, posts, communities, members, follows, likes, saves, hidden, blocks, reports, notifs, prefs, convMembers, messages] = q.map((r) => r.data as any);
+      const [profiles, posts, communities, members, follows, likes, saves, hidden, blocks, reports, notifs, prefs, convMembers, messages, stats] = q.map((r) => r.data as any);
 
       if (!(profiles as any[]).some((p) => p.id === uidMe)) throw new Error('Seu perfil não foi encontrado. Fale com o suporte da Joggo.');
 
@@ -279,6 +282,7 @@ export function loadSocial(silent = false): Promise<void> {
         savedPostIds: (saves as any[]).map((s) => s.post_id),
         hiddenPostIds: (hidden as any[]).map((s) => s.post_id),
         followingIds,
+        tipsterStats: Object.fromEntries((stats as any[]).map((t) => [t.author_id, { greens: t.greens ?? 0, reds: t.reds ?? 0, pendentes: t.pendentes ?? 0 }])),
         follows: followRows.filter((f) => f.follower_id !== uidMe).map((f) => ({ followerId: f.follower_id, followingId: f.following_id })),
         joinedCommunityIds: memberRows.filter((m) => m.user_id === uidMe).map((m) => m.community_id),
         blockedUserIds: (blocks as any[]).map((b) => b.blocked_id),
@@ -367,6 +371,12 @@ export const sel = {
     const ids = uid === s.currentUserId ? s.followingIds : s.follows.filter((f) => f.followerId === uid).map((f) => f.followingId);
     return ids.filter((id) => !s.blockedUserIds.includes(id)).map((id) => s.users.find((u) => u.id === id)).filter((u): u is User => !!u);
   },
+  /** Histórico de bilhetes: greens, reds, pendentes e taxa de acerto (null sem bilhetes resolvidos). */
+  tipster: (s: SocialState, uid: ID) => {
+    const t = s.tipsterStats[uid] ?? { greens: 0, reds: 0, pendentes: 0 };
+    const resolved = t.greens + t.reds;
+    return { ...t, resolved, total: resolved + t.pendentes, rate: resolved ? Math.round((t.greens / resolved) * 100) : null };
+  },
   followerCount: (s: SocialState, u: User) => sel.followersOf(s, u.id).length,
   followingCount: (s: SocialState, u: User) => sel.followingOf(s, u.id).length,
   visiblePosts: (s: SocialState) =>
@@ -429,7 +439,14 @@ export const social = {
       betOdd: input.bet?.odd,
       betResult: input.bet ? 'pendente' : undefined,
     };
-    set((s) => ({ ...s, posts: [post, ...s.posts] }));
+    set((s) => {
+      const t = s.tipsterStats[post.authorId] ?? { greens: 0, reds: 0, pendentes: 0 };
+      return {
+        ...s,
+        posts: [post, ...s.posts],
+        tipsterStats: post.kind === 'bilhete' ? { ...s.tipsterStats, [post.authorId]: { ...t, pendentes: t.pendentes + 1 } } : s.tipsterStats,
+      };
+    });
     void (async () => {
       try {
         const urls = await Promise.all(images.map((img) => (isDataUrl(img) ? uploadDataUrl(img, 'posts') : Promise.resolve(img))));
@@ -460,7 +477,21 @@ export const social = {
     const p = socialStore.get().posts.find((x) => x.id === postId);
     if (!p || p.kind !== 'bilhete') return;
     if (p.betResult !== 'pendente') throw new Error('O resultado deste bilhete já foi marcado.');
-    set((s) => ({ ...s, posts: s.posts.map((x) => (x.id === postId ? { ...x, betResult: result } : x)) }));
+    set((s) => {
+      const t = s.tipsterStats[p.authorId] ?? { greens: 0, reds: 0, pendentes: 1 };
+      return {
+        ...s,
+        posts: s.posts.map((x) => (x.id === postId ? { ...x, betResult: result } : x)),
+        tipsterStats: {
+          ...s.tipsterStats,
+          [p.authorId]: {
+            greens: t.greens + (result === 'green' ? 1 : 0),
+            reds: t.reds + (result === 'red' ? 1 : 0),
+            pendentes: Math.max(0, t.pendentes - 1),
+          },
+        },
+      };
+    });
     run(supabase.from('posts').update({ bet_result: result }).eq('id', postId));
   },
   deletePost(id: ID) {
@@ -631,6 +662,33 @@ export const social = {
     if (!c || !c.unread) return;
     set((s) => ({ ...s, conversations: s.conversations.map((x) => (x.id === id ? { ...x, unread: 0 } : x)) }));
     run(supabase.from('conversation_members').update({ last_read_at: nowIso() }).match({ conversation_id: id, user_id: me() }));
+  },
+  /** Conclui as boas-vindas: salva interesses, entra nas comunidades e segue as pessoas escolhidas. */
+  completeOnboarding(input: { interests: Category[]; communityIds: ID[]; followIds: ID[] }) {
+    const s0 = socialStore.get();
+    const uidMe = s0.currentUserId;
+    const newCommunities = input.communityIds.filter((id) => !s0.joinedCommunityIds.includes(id));
+    const newFollows = input.followIds.filter((id) => id !== uidMe && !s0.followingIds.includes(id));
+    set((s) => ({
+      ...s,
+      users: s.users.map((u) => (u.id === uidMe ? { ...u, interests: input.interests, onboarded: true } : u)),
+      joinedCommunityIds: [...s.joinedCommunityIds, ...newCommunities],
+      followingIds: [...s.followingIds, ...newFollows],
+    }));
+    void (async () => {
+      try {
+        const ops = [
+          supabase.from('profiles').update({ interests: input.interests, onboarded: true }).eq('id', uidMe),
+          newCommunities.length ? supabase.from('community_members').insert(newCommunities.map((c) => ({ community_id: c, user_id: uidMe }))) : null,
+          newFollows.length ? supabase.from('follows').insert(newFollows.map((f) => ({ follower_id: uidMe, following_id: f }))) : null,
+        ].filter(Boolean);
+        const res = await Promise.all(ops as PromiseLike<{ error: unknown }>[]);
+        const err = res.find((r) => r.error)?.error;
+        if (err) throw err;
+      } catch (e) {
+        fail(e);
+      }
+    })();
   },
   /** Recarrega os dados do servidor. */
   resetDemo: () => loadSocial(),

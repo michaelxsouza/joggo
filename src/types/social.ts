@@ -20,6 +20,7 @@ export interface User {
   followers: number; // seguidores (sem contar eu)
   following: number;
   founder?: boolean;
+  onboarded?: boolean;
 }
 
 export interface Post {
@@ -36,6 +37,12 @@ export interface Post {
   betPick?: string;
   betOdd?: number;
   betResult?: BetResult;
+}
+
+export interface TipsterStats {
+  greens: number;
+  reds: number;
+  pendentes: number;
 }
 
 export type BetResult = 'pendente' | 'green' | 'red' | 'anulado';
@@ -123,6 +130,8 @@ export interface SocialState {
   followingIds: ID[];
   /** Quem segue quem entre as outras pessoas (as minhas relações ficam em followingIds). */
   follows: { followerId: ID; followingId: ID }[];
+  /** Bilhetes por pessoa: greens, reds e pendentes. */
+  tipsterStats: Record<ID, TipsterStats>;
   joinedCommunityIds: ID[];
   blockedUserIds: ID[];
   reports: Report[];

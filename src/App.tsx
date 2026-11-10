@@ -2,7 +2,8 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ToastProvider, useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
-import { clearSocial, loadSocial, onSocialError, socialStatus } from '@/services/socialService';
+import { clearSocial, loadSocial, onSocialError, sel, socialStatus, useSocial } from '@/services/socialService';
+import Onboarding from '@/pages/Onboarding';
 import { UIProvider } from '@/app/UIContext';
 import { AppShell } from '@/components/layout/AppShell';
 import { reconcileCampaigns } from '@/services/adsService';
@@ -46,7 +47,13 @@ function SocialGate({ userId, children }: { userId: string; children: React.Reac
       </div>
     );
   if (status.status !== 'ready') return <Splash />;
-  return <>{children}</>;
+  return <OnboardingGate>{children}</OnboardingGate>;
+}
+
+/** Quem ainda não passou pelas boas-vindas vê os 4 passos antes do feed. */
+function OnboardingGate({ children }: { children: React.ReactNode }) {
+  const onboarded = useSocial((s) => sel.me(s)?.onboarded ?? true);
+  return onboarded ? <>{children}</> : <Onboarding />;
 }
 
 /** Protege as rotas do app: sem sessão, vai para /entrar e volta depois. */

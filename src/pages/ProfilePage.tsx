@@ -9,6 +9,7 @@ import { FollowButton } from '@/components/social/Buttons';
 import { PostList } from '@/components/posts/PostList';
 import { EditProfileModal } from '@/components/profile/EditProfileModal';
 import { FollowListModal, type FollowTab } from '@/components/profile/FollowListModal';
+import { TipsterStatsCard } from '@/components/profile/TipsterStats';
 import { useUI } from '@/app/UIContext';
 import { useToast } from '@/components/ui/Toast';
 import { compact, copyText } from '@/lib/utils';
@@ -150,6 +151,7 @@ export default function ProfilePage() {
             <span className="self-center rounded-md bg-surface border border-line px-2 py-0.5 text-xs text-ink-muted">Segue você</span>
           )}
         </div>
+        {!blocked && <TipsterStatsCard userId={user.id} isMe={isMe} />}
       </div>
 
       {blocked ? (

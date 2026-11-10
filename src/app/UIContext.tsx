@@ -13,7 +13,7 @@ interface ConfirmOpts {
 }
 
 interface UICtx {
-  openComposer: (opts?: { communityId?: string }) => void;
+  openComposer: (opts?: { communityId?: string; mode?: 'post' | 'bilhete' }) => void;
   openReport: (r: ReportRequest) => void;
   confirm: (o: ConfirmOpts) => void;
 }
@@ -21,18 +21,18 @@ interface UICtx {
 const Ctx = createContext<UICtx | null>(null);
 
 export function UIProvider({ children }: { children: ReactNode }) {
-  const [composer, setComposer] = useState<{ open: boolean; communityId?: string }>({ open: false });
+  const [composer, setComposer] = useState<{ open: boolean; communityId?: string; mode?: 'post' | 'bilhete' }>({ open: false });
   const [report, setReport] = useState<ReportRequest | null>(null);
   const [confirmState, setConfirm] = useState<ConfirmOpts | null>(null);
 
-  const openComposer = useCallback((opts?: { communityId?: string }) => setComposer({ open: true, communityId: opts?.communityId }), []);
+  const openComposer = useCallback((opts?: { communityId?: string; mode?: 'post' | 'bilhete' }) => setComposer({ open: true, communityId: opts?.communityId, mode: opts?.mode }), []);
   const openReport = useCallback((r: ReportRequest) => setReport(r), []);
   const confirm = useCallback((o: ConfirmOpts) => setConfirm(o), []);
 
   return (
     <Ctx.Provider value={{ openComposer, openReport, confirm }}>
       {children}
-      <CreatePostModal open={composer.open} communityId={composer.communityId} onClose={() => setComposer({ open: false })} />
+      <CreatePostModal open={composer.open} communityId={composer.communityId} initialMode={composer.mode} onClose={() => setComposer({ open: false })} />
       <ReportModal request={report} onClose={() => setReport(null)} />
       <Modal
         open={!!confirmState}
