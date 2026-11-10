@@ -1,3 +1,5 @@
+import { InstallAppCard } from '@/components/layout/InstallApp';
+import { safeGet, safeSet } from '@/lib/store';
 import { useMemo, useState } from 'react';
 import { ImagePlus, Inbox, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -43,6 +45,7 @@ export default function FeedPage() {
           ))}
         </div>
       </div>
+      <MobileInstallBanner />
 
       <div className="px-3 lg:px-0 space-y-3 sm:space-y-4">
         <div className="card p-3 sm:p-4 flex items-center gap-3">
@@ -77,6 +80,28 @@ export default function FeedPage() {
         )}
         {posts.length > 0 && <p className="text-center text-xs text-ink-faint py-6">Você chegou ao fim</p>}
       </div>
+    </div>
+  );
+}
+
+/** No celular, convida a instalar a Joggo (pode ser dispensado). */
+function MobileInstallBanner() {
+  const [hidden, setHidden] = useState(() => safeGet('joggo:install-dismissed') === '1');
+  if (hidden) return null;
+  return (
+    <div className="lg:hidden relative px-4 mb-3">
+      <InstallAppCard />
+      <button
+        type="button"
+        aria-label="Dispensar"
+        onClick={() => {
+          safeSet('joggo:install-dismissed', '1');
+          setHidden(true);
+        }}
+        className="absolute top-2 right-6 grid h-8 w-8 place-items-center rounded-full text-ink-muted hover:text-ink"
+      >
+        ×
+      </button>
     </div>
   );
 }

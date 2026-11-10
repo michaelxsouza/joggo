@@ -1,3 +1,4 @@
+import { EmojiButton, insertAtCaret } from '@/components/posts/EmojiPicker';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Info, MessageSquarePlus, MessagesSquare, Search, Send } from 'lucide-react';
@@ -222,6 +223,7 @@ function Chat({ conversationId }: { conversationId: string }) {
           placeholder="Escreva uma mensagem…"
           className="field resize-none min-h-[44px] max-h-32 rounded-2xl"
         />
+        <EmojiButton onPick={(e) => insertAtCaret(inputRef, text, setText, e)} placement="top" align="right" className="shrink-0 self-center" />
         <IconButton label="Enviar mensagem" type="submit" disabled={!text.trim()} className="bg-lime text-lime-ink hover:bg-lime-dim hover:text-lime-ink disabled:opacity-40 shrink-0">
           <Send className="h-5 w-5" />
         </IconButton>

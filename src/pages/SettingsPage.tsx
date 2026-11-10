@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/Toast';
 import { timeAgo } from '@/lib/utils';
 import { useDocumentTitle } from '@/lib/hooks';
 import { auth } from '@/services/authService';
+import { InstallAppCard } from '@/components/layout/InstallApp';
 
 export default function SettingsPage() {
   useDocumentTitle('Configurações');
@@ -55,6 +56,8 @@ export default function SettingsPage() {
             Sair da conta
           </Button>
         </SectionCard>
+
+        <InstallAppCard compact />
 
         <SectionCard title="Notificações">
           <div className="divide-y divide-line">

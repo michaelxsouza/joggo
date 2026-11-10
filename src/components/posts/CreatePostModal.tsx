@@ -9,6 +9,7 @@ import { sel, social, useSocial } from '@/services/socialService';
 import { CATEGORIES, type Category, type ID } from '@/types/social';
 import { cn, fileToCompressedDataUrl } from '@/lib/utils';
 import { useMentionPicker } from './mentions';
+import { EmojiButton, insertAtCaret } from './EmojiPicker';
 
 const MAX = 2000;
 const MAX_IMAGES = 4;
@@ -231,7 +232,8 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity, 
         <Button variant="secondary" size="sm" icon={<ImagePlus className="h-4 w-4" />} loading={loadingImg} disabled={images.length >= MAX_IMAGES} onClick={() => fileRef.current?.click()}>
           {images.length ? `Imagens (${images.length}/${MAX_IMAGES})` : 'Imagens'}
         </Button>
-        <span className="text-xs text-ink-faint">Até 4 imagens · JPG, PNG ou WEBP</span>
+        <EmojiButton onPick={(e) => insertAtCaret(textRef, text, setText, e)} placement="top" />
+        <span className="text-xs text-ink-faint hidden sm:inline">Até 4 imagens · JPG, PNG ou WEBP</span>
       </div>
 
       {error && (

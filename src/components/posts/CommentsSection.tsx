@@ -1,4 +1,5 @@
 import { RichText, useMentionPicker } from './mentions';
+import { EmojiButton, insertAtCaret } from './EmojiPicker';
 import { useRef, useState, type RefObject } from 'react';
 import { Link } from 'react-router-dom';
 import { Send, Trash2 } from 'lucide-react';
@@ -99,6 +100,7 @@ export function CommentsSection({ postId, inputRef }: { postId: string; inputRef
           />
           {mention.popover}
         </div>
+        <EmojiButton onPick={(e) => insertAtCaret(taRef, text, setText, e)} placement="top" align="right" className="shrink-0" />
         <IconButton label="Enviar comentário" type="submit" disabled={!text.trim()} className="text-lime disabled:opacity-40">
           <Send className="h-5 w-5" />
         </IconButton>
