@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Ban, Bookmark, CalendarDays, Flag, Inbox, Link2, Lock, Mail, MapPin, Pencil, Settings } from 'lucide-react';
+import { ShieldAlert, Ban, Bookmark, CalendarDays, Flag, Inbox, Link2, Lock, Mail, MapPin, Pencil, Settings } from 'lucide-react';
 import { sel, social, useSocial } from '@/services/socialService';
 import { categoryLabel } from '@/types/social';
 import { Avatar, EmptyState, Menu, Tabs } from '@/components/ui/misc';
@@ -15,6 +15,7 @@ import { useToast } from '@/components/ui/Toast';
 import { compact, copyText } from '@/lib/utils';
 import { useDocumentTitle } from '@/lib/hooks';
 import NotFound from './NotFound';
+import { moderation } from '@/services/moderationService';
 
 export default function ProfilePage() {
   const { handle = '' } = useParams();
@@ -101,6 +102,29 @@ export default function ProfilePage() {
                           },
                         }),
                     },
+                    ...(sel.isModerator(state) && user.role !== 'admin' && user.role !== 'moderator'
+                      ? [
+                          {
+                            label: user.banned ? 'Reativar conta (moderação)' : 'Suspender conta (moderação)',
+                            icon: <ShieldAlert className="h-4 w-4" />,
+                            danger: !user.banned,
+                            onSelect: () =>
+                              ui.confirm({
+                                title: user.banned ? `Reativar ${user.name}?` : `Suspender ${user.name}?`,
+                                message: user.banned
+                                  ? 'A pessoa volta a poder publicar, comentar e interagir.'
+                                  : 'A pessoa não poderá publicar, comentar, curtir, seguir nem mandar mensagens, e os posts dela somem do feed.',
+                                confirmLabel: user.banned ? 'Reativar' : 'Suspender',
+                                danger: !user.banned,
+                                onConfirm: () =>
+                                  void moderation
+                                    .setBan(user.id, !user.banned, user.banned ? undefined : 'Suspenso pela moderação')
+                                    .then(() => toast.success(user.banned ? 'Conta reativada.' : 'Conta suspensa.'))
+                                    .catch((e: Error) => toast.error(e.message)),
+                              }),
+                          },
+                        ]
+                      : []),
                   ]}
                 />
                 <IconButton label={`Enviar mensagem para ${user.name}`} className="border border-line" onClick={startChat}>

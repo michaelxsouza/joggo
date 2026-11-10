@@ -22,7 +22,8 @@ import LoginPage from '@/pages/auth/LoginPage';
 import SignUpPage from '@/pages/auth/SignUpPage';
 import TermsPage from '@/pages/auth/TermsPage';
 import NewPasswordPage from '@/pages/auth/NewPasswordPage';
-import { useAuth } from '@/services/authService';
+import ModerationPage from '@/pages/ModerationPage';
+import { auth, useAuth } from '@/services/authService';
 
 function Splash() {
   return <div className="min-h-dvh grid place-items-center text-ink-faint text-sm" aria-busy="true">Carregando…</div>;
@@ -52,8 +53,25 @@ function SocialGate({ userId, children }: { userId: string; children: React.Reac
 
 /** Quem ainda não passou pelas boas-vindas vê os 4 passos antes do feed. */
 function OnboardingGate({ children }: { children: React.ReactNode }) {
-  const onboarded = useSocial((s) => sel.me(s)?.onboarded ?? true);
-  return onboarded ? <>{children}</> : <Onboarding />;
+  const me = useSocial(sel.me);
+  if (me?.banned) return <SuspendedScreen reason={me.banReason} />;
+  return (me?.onboarded ?? true) ? <>{children}</> : <Onboarding />;
+}
+
+function SuspendedScreen({ reason }: { reason?: string }) {
+  return (
+    <div className="min-h-dvh grid place-items-center p-6 text-center">
+      <div className="max-w-sm space-y-4">
+        <h1 className="text-2xl font-extrabold">Conta suspensa</h1>
+        <p className="text-ink-muted">
+          Sua conta foi suspensa pela moderação da Joggo{reason ? ` por: ${reason}` : ''}. Se acha que foi um engano, fale com a equipe da Joggo.
+        </p>
+        <Button variant="secondary" onClick={() => void auth.signOut()}>
+          Sair da conta
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 /** Protege as rotas do app: sem sessão, vai para /entrar e volta depois. */
@@ -99,6 +117,7 @@ export default function App() {
               <Route path="configuracoes" element={<SettingsPage />} />
               <Route path="regras" element={<RulesPage />} />
               <Route path="post/:id" element={<PostDetailPage />} />
+              <Route path="moderacao" element={<ModerationPage />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

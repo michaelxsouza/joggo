@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Ban, ChevronRight, LogOut, Flag, HeartHandshake, Pencil, ScrollText, ShieldAlert } from 'lucide-react';
+import { Ban, ChevronRight, LogOut, Flag, HeartHandshake, Pencil, ScrollText, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { sel, social, useSocial } from '@/services/socialService';
 import { Avatar, SectionCard, Toggle } from '@/components/ui/misc';
 import { Button } from '@/components/ui/Button';
@@ -15,6 +15,7 @@ export default function SettingsPage() {
   useDocumentTitle('Configurações');
   const state = useSocial((s) => s);
   const me = sel.me(state);
+  const isMod = sel.isModerator(state);
   const prefs = state.notificationPrefs;
   const [editing, setEditing] = useState(false);
   const toast = useToast();
@@ -68,6 +69,7 @@ export default function SettingsPage() {
 
         <SectionCard title="Segurança e comunidade">
           <ul className="-mx-2">
+            {isMod && <RowLink to="/moderacao" icon={<ShieldCheck className="h-5 w-5" />} label="Moderação" />}
             <RowLink to="/regras" icon={<ScrollText className="h-5 w-5" />} label="Regras da comunidade" />
             <RowLink to="/regras#jogo-responsavel" icon={<HeartHandshake className="h-5 w-5" />} label="Jogo responsável" />
           </ul>

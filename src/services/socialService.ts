@@ -117,7 +117,7 @@ function fail(e: unknown) {
   const raw = (e as { message?: string })?.message ?? String(e);
   const m = raw.toLowerCase();
   const msg =
-    m.includes('limite de') || m.includes('rápido demais') || m.includes('bilhete') || m.includes('histórico') || m.includes('não é possível') || m.includes('você não pode') || m.includes('muitas mensagens')
+    m.includes('limite de') || m.includes('rápido demais') || m.includes('bilhete') || m.includes('histórico') || m.includes('suspensa') || m.includes('moderação') || m.includes('não é possível') || m.includes('você não pode') || m.includes('muitas mensagens')
       ? raw
       : m.includes('duplicate key') && m.includes('handle')
         ? 'Este @usuário já está em uso.'
@@ -153,6 +153,9 @@ const toUser = (r: any, followers: number, following: number): User => ({
   following,
   founder: r.founder,
   onboarded: r.onboarded,
+  role: r.role,
+  banned: !!r.banned_at,
+  banReason: r.ban_reason ?? undefined,
 });
 
 const toPost = (r: any, likedByMe: boolean): Post => ({
@@ -371,6 +374,10 @@ export const sel = {
     const ids = uid === s.currentUserId ? s.followingIds : s.follows.filter((f) => f.followerId === uid).map((f) => f.followingId);
     return ids.filter((id) => !s.blockedUserIds.includes(id)).map((id) => s.users.find((u) => u.id === id)).filter((u): u is User => !!u);
   },
+  isModerator: (s: SocialState) => {
+    const r = s.users.find((u) => u.id === s.currentUserId)?.role;
+    return r === 'admin' || r === 'moderator';
+  },
   /** Histórico de bilhetes: greens, reds, pendentes e taxa de acerto (null sem bilhetes resolvidos). */
   tipster: (s: SocialState, uid: ID) => {
     const t = s.tipsterStats[uid] ?? { greens: 0, reds: 0, pendentes: 0 };
@@ -381,7 +388,7 @@ export const sel = {
   followingCount: (s: SocialState, u: User) => sel.followingOf(s, u.id).length,
   visiblePosts: (s: SocialState) =>
     s.posts
-      .filter((p) => !s.hiddenPostIds.includes(p.id) && !s.blockedUserIds.includes(p.authorId))
+      .filter((p) => !s.hiddenPostIds.includes(p.id) && !s.blockedUserIds.includes(p.authorId) && !s.users.find((u) => u.id === p.authorId)?.banned)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
   unreadNotifications: (s: SocialState) => s.notifications.filter((n) => !n.read && (!n.actorId || !s.blockedUserIds.includes(n.actorId))).length,
   unreadMessages: (s: SocialState) =>

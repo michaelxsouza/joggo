@@ -21,6 +21,9 @@ export interface User {
   following: number;
   founder?: boolean;
   onboarded?: boolean;
+  role?: 'user' | 'moderator' | 'admin';
+  banned?: boolean;
+  banReason?: string;
 }
 
 export interface Post {

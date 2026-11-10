@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import { Bell, Compass, Home, LogOut, Mail, Plus, Settings, User, Users } from 'lucide-react';
+import { openReportCount } from '@/services/moderationService';
+import { Bell, Compass, Home, LogOut, Mail, Plus, Settings, ShieldCheck, User, Users } from 'lucide-react';
 import { auth } from '@/services/authService';
 import { IconButton } from '@/components/ui/Button';
 import { sel, useSocial } from '@/services/socialService';
@@ -40,6 +42,13 @@ export function ResponsibleNote({ className }: { className?: string }) {
 
 export function Sidebar() {
   const me = useSocial(sel.me);
+  const isMod = useSocial(sel.isModerator);
+  const loc = useLocation();
+  const [openReports, setOpenReports] = useState(0);
+  // contador de denúncias abertas para quem modera (atualiza ao trocar de página)
+  useEffect(() => {
+    if (isMod) void openReportCount().then(setOpenReports);
+  }, [isMod, loc.pathname]);
   const { notif, msgs } = useCounts();
   const ui = useUI();
   const items = [
@@ -50,6 +59,7 @@ export function Sidebar() {
     { to: '/notificacoes', label: 'Notificações', icon: Bell, count: notif },
     { to: `/perfil/${me.handle}`, label: 'Meu perfil', icon: User },
     { to: '/configuracoes', label: 'Configurações', icon: Settings },
+    ...(isMod ? [{ to: '/moderacao', label: 'Moderação', icon: ShieldCheck, count: openReports }] : []),
   ];
   return (
     <nav aria-label="Navegação principal" className="hidden lg:flex flex-col h-dvh sticky top-0 py-5 pr-4 w-[248px] shrink-0">
