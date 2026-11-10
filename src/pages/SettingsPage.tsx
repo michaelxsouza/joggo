@@ -11,6 +11,7 @@ import { timeAgo } from '@/lib/utils';
 import { useDocumentTitle } from '@/lib/hooks';
 import { auth } from '@/services/authService';
 import { InstallAppCard } from '@/components/layout/InstallApp';
+import { DeleteAccountSection } from '@/components/profile/DeleteAccount';
 
 export default function SettingsPage() {
   useDocumentTitle('Configurações');
@@ -74,6 +75,8 @@ export default function SettingsPage() {
           <ul className="-mx-2">
             {isMod && <RowLink to="/moderacao" icon={<ShieldCheck className="h-5 w-5" />} label="Moderação" />}
             <RowLink to="/regras" icon={<ScrollText className="h-5 w-5" />} label="Regras da comunidade" />
+            <RowLink to="/termos" icon={<ScrollText className="h-5 w-5" />} label="Termos de uso" />
+            <RowLink to="/termos#privacidade" icon={<ShieldAlert className="h-5 w-5" />} label="Privacidade e seus dados" />
             <RowLink to="/regras#jogo-responsavel" icon={<HeartHandshake className="h-5 w-5" />} label="Jogo responsável" />
           </ul>
         </SectionCard>
@@ -130,6 +133,7 @@ export default function SettingsPage() {
         </SectionCard>
 
 
+        <DeleteAccountSection />
       </div>
       <EditProfileModal open={editing} onClose={() => setEditing(false)} />
     </div>
