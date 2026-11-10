@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { openReportCount } from '@/services/moderationService';
-import { Bell, Compass, Home, LogOut, Mail, Plus, Settings, ShieldCheck, User, Users } from 'lucide-react';
+import { Bell, Compass, Home, LogOut, Mail, Plus, Search, Settings, ShieldCheck, Trophy, User, Users } from 'lucide-react';
 import { auth } from '@/services/authService';
 import { IconButton } from '@/components/ui/Button';
 import { sel, useSocial } from '@/services/socialService';
@@ -54,6 +54,7 @@ export function Sidebar() {
   const items = [
     { to: '/', label: 'Feed', icon: Home, end: true },
     { to: '/explorar', label: 'Explorar', icon: Compass },
+    { to: '/jogos', label: 'Jogos', icon: Trophy },
     { to: '/comunidades', label: 'Comunidades', icon: Users },
     { to: '/mensagens', label: 'Mensagens', icon: Mail, count: msgs },
     { to: '/notificacoes', label: 'Notificações', icon: Bell, count: notif },
@@ -120,6 +121,7 @@ export function MobileHeader() {
           18+
         </span>
         <div className="ml-auto flex items-center">
+          <HeaderIcon to="/explorar" label="Buscar" count={0} icon={<Search className="h-[22px] w-[22px]" />} />
           <HeaderIcon to="/notificacoes" label="Notificações" count={notif} icon={<Bell className="h-[22px] w-[22px]" />} />
           <HeaderIcon to="/mensagens" label="Mensagens" count={msgs} icon={<Mail className="h-[22px] w-[22px]" />} />
         </div>
@@ -147,7 +149,7 @@ export function BottomNav() {
   const loc = useLocation();
   const items = [
     { to: '/', label: 'Feed', icon: Home, end: true },
-    { to: '/explorar', label: 'Explorar', icon: Compass },
+    { to: '/jogos', label: 'Jogos', icon: Trophy },
     { to: 'create', label: 'Criar', icon: Plus },
     { to: '/comunidades', label: 'Comunidades', icon: Users },
     { to: `/perfil/${me.handle}`, label: 'Perfil', icon: User },

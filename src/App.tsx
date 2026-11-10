@@ -23,6 +23,7 @@ import SignUpPage from '@/pages/auth/SignUpPage';
 import TermsPage from '@/pages/auth/TermsPage';
 import NewPasswordPage from '@/pages/auth/NewPasswordPage';
 import ModerationPage from '@/pages/ModerationPage';
+import MatchesPage from '@/pages/MatchesPage';
 import { auth, useAuth } from '@/services/authService';
 
 function Splash() {
@@ -118,6 +119,7 @@ export default function App() {
               <Route path="regras" element={<RulesPage />} />
               <Route path="post/:id" element={<PostDetailPage />} />
               <Route path="moderacao" element={<ModerationPage />} />
+              <Route path="jogos" element={<MatchesPage />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

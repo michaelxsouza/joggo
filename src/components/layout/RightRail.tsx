@@ -1,3 +1,5 @@
+import { COMPETITIONS, dayKey, isLive, todayKey, useMatches } from '@/services/matchesService';
+import { MatchRow } from '@/pages/MatchesPage';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
@@ -51,6 +53,8 @@ export function RightRail() {
       <div className="sticky top-0 py-5 space-y-4 max-h-dvh overflow-y-auto scrollbar-none">
         <SearchBox />
 
+        <TodayMatches />
+
         <SectionCard title="Comunidades em destaque" action={<Link to="/comunidades" className="text-sm font-semibold text-lime hover:underline">Ver todas</Link>}>
           <ul className="space-y-3">
             {featured.map((c) => (
@@ -94,5 +98,25 @@ export function RightRail() {
         <ResponsibleNote className="px-1" />
       </div>
     </aside>
+  );
+}
+
+/** Até 5 jogos de hoje (ao vivo primeiro). */
+function TodayMatches() {
+  const { matches } = useMatches();
+  const today = todayKey();
+  const list = (matches ?? [])
+    .filter((m) => dayKey(m.date) === today)
+    .sort((a, b) => Number(isLive(b.status)) - Number(isLive(a.status)) || (COMPETITIONS[a.competitionCode]?.order ?? 99) - (COMPETITIONS[b.competitionCode]?.order ?? 99) || a.date.getTime() - b.date.getTime())
+    .slice(0, 5);
+  if (!list.length) return null;
+  return (
+    <SectionCard title="Jogos de hoje" action={<Link to="/jogos" className="text-sm font-semibold text-lime hover:underline">Ver todos</Link>}>
+      <ul className="divide-y divide-line -my-2">
+        {list.map((m) => (
+          <MatchRow key={m.id} m={m} compact />
+        ))}
+      </ul>
+    </SectionCard>
   );
 }
