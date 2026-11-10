@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/Toast';
 import { sel, social, useSocial } from '@/services/socialService';
 import { CATEGORIES, type Category, type ID } from '@/types/social';
 import { cn, fileToCompressedDataUrl } from '@/lib/utils';
+import { useMentionPicker } from './mentions';
 
 const MAX = 2000;
 const MAX_IMAGES = 4;
@@ -31,6 +32,7 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity, 
   const [loadingImg, setLoadingImg] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
+  const mention = useMentionPicker(textRef, text, setText);
 
   useEffect(() => {
     if (open) {
@@ -156,7 +158,7 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity, 
 
       <div className="flex gap-3">
         <Avatar user={me} size="md" />
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 relative">
           <label htmlFor="compose-text" className="sr-only">
             Texto da publicação
           </label>
@@ -167,14 +169,18 @@ export function CreatePostModal({ open, onClose, communityId: initialCommunity, 
             onChange={(e) => {
               setText(e.target.value);
               setError(undefined);
+              mention.onInput(e.target);
             }}
+            onBlur={() => setTimeout(mention.close, 150)}
             onKeyDown={(e) => {
+              if (mention.onKeyDown(e)) return;
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit();
             }}
             rows={4}
-            placeholder={mode === 'bilhete' ? 'Conte sua análise (opcional)…' : 'Compartilhe uma experiência, uma dúvida ou uma análise…'}
+            placeholder={mode === 'bilhete' ? 'Conte sua análise (opcional)…' : 'Compartilhe uma experiência, uma dúvida ou uma análise… Use @ para marcar alguém.'}
             className="w-full bg-transparent resize-none text-[17px] leading-relaxed placeholder:text-ink-faint focus:outline-none focus-visible:outline-none"
           />
+          {mention.popover}
           <div className={cn('text-right text-xs tabular-nums', tooLong ? 'text-danger' : 'text-ink-faint')}>
             {text.length}/{MAX}
           </div>

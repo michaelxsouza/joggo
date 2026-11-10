@@ -10,6 +10,7 @@ import { useUI } from '@/app/UIContext';
 import { cn, compact, copyText, timeAgo } from '@/lib/utils';
 import { CommentsSection } from './CommentsSection';
 import { ImageCarousel } from './PostMedia';
+import { RichText } from './mentions';
 import { BetCard } from './BetCard';
 import { TipsterBadge } from '@/components/profile/TipsterStats';
 
@@ -133,7 +134,9 @@ function PostCardInner({ post, defaultOpenComments = false }: { post: Post; defa
         <Menu items={menu} label="Opções da publicação" />
       </header>
 
-      {post.text && <p className="mt-3 text-[15px] leading-relaxed whitespace-pre-wrap break-words">{post.text}</p>}
+      {post.text && <p className="mt-3 text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+          <RichText text={post.text} />
+        </p>}
       {post.kind === 'bilhete' && <BetCard post={post} isMine={isMine} />}
       {post.images.length > 0 && <ImageCarousel images={post.images} alt={`Imagem da publicação de ${author.name}`} />}
 

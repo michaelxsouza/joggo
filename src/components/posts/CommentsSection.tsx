@@ -1,4 +1,5 @@
-import { useState, type RefObject } from 'react';
+import { RichText, useMentionPicker } from './mentions';
+import { useRef, useState, type RefObject } from 'react';
 import { Link } from 'react-router-dom';
 import { Send, Trash2 } from 'lucide-react';
 import { sel, social, useSocial } from '@/services/socialService';
@@ -13,6 +14,9 @@ export function CommentsSection({ postId, inputRef }: { postId: string; inputRef
   const me = useSocial(sel.me);
   const toast = useToast();
   const [text, setText] = useState('');
+  const localRef = useRef<HTMLTextAreaElement>(null);
+  const taRef = inputRef ?? localRef;
+  const mention = useMentionPicker(taRef, text, setText, { placement: 'top' });
   const [error, setError] = useState<string>();
 
   const submit = (e?: React.FormEvent) => {
@@ -57,7 +61,9 @@ export function CommentsSection({ postId, inputRef }: { postId: string; inputRef
                     </button>
                   )}
                 </div>
-                <p className="text-[14px] leading-relaxed mt-0.5 break-words whitespace-pre-wrap">{c.text}</p>
+                <p className="text-[14px] leading-relaxed mt-0.5 break-words whitespace-pre-wrap">
+                  <RichText text={c.text} />
+                </p>
               </div>
             </li>
           );
@@ -65,21 +71,24 @@ export function CommentsSection({ postId, inputRef }: { postId: string; inputRef
       </ul>
       <form onSubmit={submit} className="flex items-end gap-2">
         <Avatar user={me} size="sm" />
-        <div className="flex-1">
+        <div className="flex-1 relative">
           <label htmlFor={`c-${postId}`} className="sr-only">
             Escreva um comentário
           </label>
           <textarea
             id={`c-${postId}`}
-            ref={inputRef}
+            ref={taRef}
             rows={1}
             value={text}
             maxLength={500}
             onChange={(e) => {
               setText(e.target.value);
               setError(undefined);
+              mention.onInput(e.target);
             }}
+            onBlur={() => setTimeout(mention.close, 150)}
             onKeyDown={(e) => {
+              if (mention.onKeyDown(e)) return;
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 submit();
@@ -88,6 +97,7 @@ export function CommentsSection({ postId, inputRef }: { postId: string; inputRef
             placeholder="Escreva um comentário…"
             className="field py-2 min-h-[40px] resize-none"
           />
+          {mention.popover}
         </div>
         <IconButton label="Enviar comentário" type="submit" disabled={!text.trim()} className="text-lime disabled:opacity-40">
           <Send className="h-5 w-5" />

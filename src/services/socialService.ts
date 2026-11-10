@@ -178,6 +178,7 @@ const NOTIF_TEXT: Record<string, string> = {
   like: 'curtiu sua publicação',
   comment: 'comentou na sua publicação',
   follow: 'começou a seguir você',
+  mention: 'marcou você',
   community: 'entrou na sua comunidade',
   system: 'Aviso da Joggo',
 };

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, BellOff, CheckCheck, Heart, Info, MessageCircle, UserPlus, Users } from 'lucide-react';
+import { AtSign, Bell, BellOff, CheckCheck, Heart, Info, MessageCircle, UserPlus, Users } from 'lucide-react';
 import { sel, social, useSocial } from '@/services/socialService';
 import type { AppNotification } from '@/types/social';
 import { Avatar, EmptyState, Tabs } from '@/components/ui/misc';
@@ -16,6 +16,7 @@ const ICON = {
   follow: { icon: UserPlus, cls: 'text-lime bg-lime/10' },
   community: { icon: Users, cls: 'text-warn bg-warn/10' },
   system: { icon: Info, cls: 'text-ink-muted bg-surface' },
+  mention: { icon: AtSign, cls: 'text-lime bg-lime/10' },
 };
 
 export default function NotificationsPage() {

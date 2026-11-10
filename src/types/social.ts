@@ -86,7 +86,7 @@ export interface Conversation {
   unread: number;
 }
 
-export type NotificationType = 'like' | 'comment' | 'follow' | 'community' | 'system';
+export type NotificationType = 'like' | 'comment' | 'follow' | 'community' | 'system' | 'mention';
 
 export interface AppNotification {
   id: ID;
